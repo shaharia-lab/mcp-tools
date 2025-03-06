@@ -9,7 +9,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// GetWeather represents the weather tool
+// GetWeather is a tool that provides the current weather for a specified location.
+// The tool expects an input schema that includes a "location" field, which
+// specifies the city and state (e.g., "San Francisco, CA"). It returns the
+// weather information as text content.
 var GetWeather = mcp.Tool{
 	Name:        "get_weather",
 	Description: "Get the current weather for a given location.",
