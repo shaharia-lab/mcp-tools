@@ -1,4 +1,3 @@
-// Package mcptools provides tools for making HTTP requests using curl
 package mcptools
 
 import (
@@ -6,36 +5,53 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/shaharia-lab/goai/mcp"
-	"log"
+	"github.com/shaharia-lab/goai/observability"
+	"go.opentelemetry.io/otel/attribute"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // Curl represents a wrapper around the system's curl command-line tool,
 // providing a programmatic interface for making HTTP requests.
 type Curl struct {
+	logger         observability.Logger
+	blockedMethods []string // List of HTTP methods that are not allowed
 }
 
-// NewCurl creates and returns a new instance of the Curl wrapper.
-// This is a constructor method that initializes a new Curl object.
-func (c *Curl) NewCurl() *Curl {
-	return &Curl{}
+// CurlConfig holds the configuration for the Curl tool
+type CurlConfig struct {
+	BlockedMethods []string
+}
+
+// NewCurl creates and returns a new instance of the Curl wrapper with the provided configuration.
+func NewCurl(logger observability.Logger, config CurlConfig) *Curl {
+	// Convert blocked methods to uppercase for case-insensitive comparison
+	blockedMethods := make([]string, len(config.BlockedMethods))
+	for i, method := range config.BlockedMethods {
+		blockedMethods[i] = strings.ToUpper(method)
+	}
+
+	return &Curl{
+		logger:         logger,
+		blockedMethods: blockedMethods,
+	}
+}
+
+// isMethodBlocked checks if the given HTTP method is in the blocked list
+func (c *Curl) isMethodBlocked(method string) bool {
+	method = strings.ToUpper(method)
+	for _, blocked := range c.blockedMethods {
+		if blocked == method {
+			return true
+		}
+	}
+	return false
 }
 
 // CurlAllInOneTool returns a mcp.Tool that can perform various HTTP requests
-// using the system's curl command. It supports all standard HTTP methods,
-// custom headers, request body data, and SSL configuration.
-//
-// The tool accepts the following JSON input parameters:
-//   - url: (required) The target URL for the HTTP request
-//   - method: (required) The HTTP method to use (GET, POST, PUT, DELETE, PATCH, etc.)
-//   - data: (optional) The request body data to send
-//   - headers: (optional) A map of HTTP headers to include in the request
-//   - insecure: (optional) Boolean flag to allow insecure SSL connections
-//
-// The tool supports environment variable expansion in header values using ${VAR} syntax.
-// It returns the command output as a text result in the mcp.CallToolResult structure.
 func (c *Curl) CurlAllInOneTool() mcp.Tool {
 	return mcp.Tool{
 		Name:        "curl_all_in_one",
@@ -70,6 +86,17 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
         "required": ["url", "method"]
     }`),
 		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
+			// Start tracing span
+			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+			defer span.End()
+
+			startTime := time.Now()
+			c.logger.Info("Starting curl request execution",
+				"tool_name", params.Name,
+				"arguments", string(params.Arguments),
+				"timestamp", startTime.Format(time.RFC3339),
+			)
+
 			var input struct {
 				URL      string            `json:"url"`
 				Method   string            `json:"method"`
@@ -77,15 +104,52 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 				Headers  map[string]string `json:"headers"`
 				Insecure bool              `json:"insecure"`
 			}
+
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
+				c.logger.Error("Failed to unmarshal input parameters",
+					"error", err,
+					"raw_input", string(params.Arguments),
+				)
+				span.RecordError(err)
+				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
+			}
+
+			// Validate URL
+			parsedURL, err := url.Parse(input.URL)
+			if err != nil {
+				c.logger.Error("Invalid URL provided",
+					"url", input.URL,
+					"error", err,
+				)
+				span.RecordError(err)
+				return mcp.CallToolResult{}, fmt.Errorf("invalid URL: %w", err)
+			}
+
+			// Check if method is blocked
+			if c.isMethodBlocked(input.Method) {
+				err := fmt.Errorf("HTTP method %s is blocked", input.Method)
+				c.logger.Error("Blocked HTTP method attempted",
+					"method", input.Method,
+					"url", input.URL,
+				)
+				span.RecordError(err)
 				return mcp.CallToolResult{}, err
 			}
+
+			// Set span attributes
+			span.SetAttributes(
+				attribute.String("http.method", input.Method),
+				attribute.String("http.url", input.URL),
+				attribute.String("http.scheme", parsedURL.Scheme),
+				attribute.String("http.host", parsedURL.Host),
+			)
 
 			// Replace environment variable placeholders in headers
 			for key, value := range input.Headers {
 				input.Headers[key] = os.ExpandEnv(value)
 			}
 
+			// Build curl command arguments
 			args := []string{"-s", "-X", strings.ToUpper(input.Method)}
 			if input.Insecure {
 				args = append(args, "-k")
@@ -101,18 +165,41 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 			args = append(args, input.URL)
 
-			marshal, err := json.Marshal(input)
-			if err != nil {
-				return mcp.CallToolResult{}, err
-			}
+			// Log the full command (excluding sensitive data)
+			c.logger.Debug("Executing curl command",
+				"method", input.Method,
+				"url", input.URL,
+				"headers_count", len(input.Headers),
+				"has_data", input.Data != "",
+				"insecure", input.Insecure,
+			)
 
-			log.Printf("curl %s", marshal)
-
+			// Execute the command
 			cmd := exec.CommandContext(ctx, "curl", args...)
 			output, err := cmd.CombinedOutput()
+
+			// Log execution results
+			executionTime := time.Since(startTime)
 			if err != nil {
-				return mcp.CallToolResult{}, err
+				c.logger.Error("Curl command failed",
+					"error", err,
+					"output", string(output),
+					"duration_ms", executionTime.Milliseconds(),
+				)
+				span.RecordError(err)
+				return mcp.CallToolResult{}, fmt.Errorf("curl command failed: %w", err)
 			}
+
+			c.logger.Info("Curl command completed successfully",
+				"duration_ms", executionTime.Milliseconds(),
+				"output_size", len(output),
+			)
+
+			// Set success span attributes
+			span.SetAttributes(
+				attribute.Int64("duration_ms", executionTime.Milliseconds()),
+				attribute.Int("response_size", len(output)),
+			)
 
 			return mcp.CallToolResult{
 				Content: []mcp.ToolResultContent{
