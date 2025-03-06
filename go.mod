@@ -14,3 +14,5 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 )
+
+replace github.com/shaharia-lab/goai => /home/shaharia/Projects/goai

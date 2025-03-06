@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const CurlToolName = "curl_all_in_one"
+
 // Curl represents a wrapper around the system's curl command-line tool,
 // providing a programmatic interface for making HTTP requests.
 type Curl struct {
@@ -54,7 +56,7 @@ func (c *Curl) isMethodBlocked(method string) bool {
 // CurlAllInOneTool returns a mcp.Tool that can perform various HTTP requests
 func (c *Curl) CurlAllInOneTool() mcp.Tool {
 	return mcp.Tool{
-		Name:        "curl_all_in_one",
+		Name:        CurlToolName,
 		Description: "Perform any HTTP request with specified method, URL, headers, and data",
 		InputSchema: json.RawMessage(`{
         "type": "object",
@@ -91,11 +93,11 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			defer span.End()
 
 			startTime := time.Now()
-			c.logger.Info("Starting curl request execution",
-				"tool_name", params.Name,
-				"arguments", string(params.Arguments),
-				"timestamp", startTime.Format(time.RFC3339),
-			)
+			c.logger.WithFields(map[string]interface{}{
+				"tool_name": params.Name,
+				"arguments": string(params.Arguments),
+				"timestamp": startTime.Format(time.RFC3339),
+			}).Info("Starting curl request execution")
 
 			var input struct {
 				URL      string            `json:"url"`
@@ -106,10 +108,11 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			}
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
-				c.logger.Error("Failed to unmarshal input parameters",
-					"error", err,
-					"raw_input", string(params.Arguments),
-				)
+				c.logger.WithFields(map[string]interface{}{
+					observability.ErrorLogField: err,
+					"raw_input":                 string(params.Arguments),
+				}).Error("Failed to unmarshal input parameters")
+
 				span.RecordError(err)
 				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
@@ -117,10 +120,11 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			// Validate URL
 			parsedURL, err := url.Parse(input.URL)
 			if err != nil {
-				c.logger.Error("Invalid URL provided",
-					"url", input.URL,
-					"error", err,
-				)
+				c.logger.WithFields(map[string]interface{}{
+					"url":                       input.URL,
+					observability.ErrorLogField: err,
+				}).Error("Invalid URL provided")
+
 				span.RecordError(err)
 				return mcp.CallToolResult{}, fmt.Errorf("invalid URL: %w", err)
 			}
@@ -128,10 +132,10 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			// Check if method is blocked
 			if c.isMethodBlocked(input.Method) {
 				err := fmt.Errorf("HTTP method %s is blocked", input.Method)
-				c.logger.Error("Blocked HTTP method attempted",
-					"method", input.Method,
-					"url", input.URL,
-				)
+				c.logger.WithFields(map[string]interface{}{
+					"method": input.Method,
+					"url":    input.URL,
+				}).Error("Blocked HTTP method attempted")
 				span.RecordError(err)
 				return mcp.CallToolResult{}, err
 			}
@@ -165,14 +169,13 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 			args = append(args, input.URL)
 
-			// Log the full command (excluding sensitive data)
-			c.logger.Debug("Executing curl command",
-				"method", input.Method,
-				"url", input.URL,
-				"headers_count", len(input.Headers),
-				"has_data", input.Data != "",
-				"insecure", input.Insecure,
-			)
+			c.logger.WithFields(map[string]interface{}{
+				"method":        input.Method,
+				"url":           input.URL,
+				"headers_count": len(input.Headers),
+				"has_data":      input.Data != "",
+				"insecure":      input.Insecure,
+			}).Info("Executing curl command")
 
 			// Execute the command
 			cmd := exec.CommandContext(ctx, "curl", args...)
@@ -181,11 +184,11 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			// Log execution results
 			executionTime := time.Since(startTime)
 			if err != nil {
-				c.logger.Error("Curl command failed",
-					"error", err,
-					"output", string(output),
-					"duration_ms", executionTime.Milliseconds(),
-				)
+				c.logger.WithFields(map[string]interface{}{
+					observability.ErrorLogField: err,
+					"output":                    string(output),
+					"duration_ms":               executionTime.Milliseconds(),
+				}).Error("Curl command failed")
 				span.RecordError(err)
 				return mcp.CallToolResult{}, fmt.Errorf("curl command failed: %w", err)
 			}
