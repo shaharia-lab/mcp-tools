@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai/observability"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -31,7 +32,7 @@ func TestCurl_Integration(t *testing.T) {
 		envVars        map[string]string
 		wantErr        bool
 		errorContains  string
-		checkLogs      func(t *testing.T, logger *MockLogger)
+		checkLogs      func(t *testing.T, logger *observability.MockLogger)
 		validateResult func(t *testing.T, result mcp.CallToolResult)
 	}{
 		{
@@ -46,7 +47,7 @@ func TestCurl_Integration(t *testing.T) {
 					"X-Test-Header": "test-value",
 				},
 			},
-			checkLogs: func(t *testing.T, logger *MockLogger) {
+			checkLogs: func(t *testing.T, logger *observability.MockLogger) {
 				infoLogs := logger.GetInfoLogs()
 				if len(infoLogs) == 0 {
 					t.Error("Expected info logs but got none")
@@ -69,7 +70,7 @@ func TestCurl_Integration(t *testing.T) {
 			},
 			wantErr:       true,
 			errorContains: "is blocked",
-			checkLogs: func(t *testing.T, logger *MockLogger) {
+			checkLogs: func(t *testing.T, logger *observability.MockLogger) {
 				errorLogs := logger.GetErrorLogs()
 				if len(errorLogs) == 0 {
 					t.Error("Expected error logs for blocked method")
@@ -99,7 +100,7 @@ func TestCurl_Integration(t *testing.T) {
 			},
 			wantErr:       true,
 			errorContains: "invalid URL",
-			checkLogs: func(t *testing.T, logger *MockLogger) {
+			checkLogs: func(t *testing.T, logger *observability.MockLogger) {
 				errorLogs := logger.GetErrorLogs()
 				if len(errorLogs) == 0 {
 					t.Error("Expected error logs for invalid URL")
@@ -151,7 +152,7 @@ func TestCurl_Integration(t *testing.T) {
 				defer os.Unsetenv(k)
 			}
 
-			curl := NewCurl(NewMockLogger(), tt.config)
+			curl := NewCurl(observability.NewMockLogger(), tt.config)
 			tool := curl.CurlAllInOneTool()
 
 			inputJSON, err := json.Marshal(tt.input)
@@ -227,7 +228,7 @@ func TestCurl_Configuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			curl := NewCurl(NewMockLogger(), CurlConfig{
+			curl := NewCurl(observability.NewMockLogger(), CurlConfig{
 				BlockedMethods: tt.blockedMethods,
 			})
 
