@@ -1,6 +1,6 @@
 module github.com/shaharia-lab/mcp-tools
 
-go 1.24
+go 1.23
 
 require (
 	github.com/shaharia-lab/goai v0.11.0
