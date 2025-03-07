@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"os"
@@ -13,42 +12,6 @@ import (
 	"path/filepath"
 	"testing"
 )
-
-// MockLogger is a mock implementation of observability.Logger
-// MockLogger is a mock implementation of observability.Logger
-type MockLogger struct {
-	mock.Mock
-}
-
-// Format style logging methods
-func (m *MockLogger) Debugf(format string, args ...interface{}) { m.Called(format, args) }
-func (m *MockLogger) Infof(format string, args ...interface{})  { m.Called(format, args) }
-func (m *MockLogger) Warnf(format string, args ...interface{})  { m.Called(format, args) }
-func (m *MockLogger) Errorf(format string, args ...interface{}) { m.Called(format, args) }
-func (m *MockLogger) Fatalf(format string, args ...interface{}) { m.Called(format, args) }
-func (m *MockLogger) Panicf(format string, args ...interface{}) { m.Called(format, args) }
-
-// Regular logging methods
-func (m *MockLogger) Debug(args ...interface{}) { m.Called(args) }
-func (m *MockLogger) Info(args ...interface{})  { m.Called(args) }
-func (m *MockLogger) Warn(args ...interface{})  { m.Called(args) }
-func (m *MockLogger) Error(args ...interface{}) { m.Called(args) }
-func (m *MockLogger) Fatal(args ...interface{}) { m.Called(args) }
-func (m *MockLogger) Panic(args ...interface{}) { m.Called(args) }
-
-// Context methods
-func (m *MockLogger) WithFields(fields map[string]interface{}) observability.Logger {
-	args := m.Called(fields)
-	return args.Get(0).(observability.Logger)
-}
-func (m *MockLogger) WithContext(ctx context.Context) observability.Logger {
-	args := m.Called(ctx)
-	return args.Get(0).(observability.Logger)
-}
-func (m *MockLogger) WithErr(err error) observability.Logger {
-	args := m.Called(err)
-	return args.Get(0).(observability.Logger)
-}
 
 func TestNewGit(t *testing.T) {
 	// Arrange
