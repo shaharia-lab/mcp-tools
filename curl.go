@@ -20,7 +20,8 @@ const CurlToolName = "curl_all_in_one"
 // providing a programmatic interface for making HTTP requests.
 type Curl struct {
 	logger         observability.Logger
-	blockedMethods []string // List of HTTP methods that are not allowed
+	blockedMethods []string
+	cmdExecutor    CommandExecutor
 }
 
 // CurlConfig holds the configuration for the Curl tool
@@ -30,7 +31,6 @@ type CurlConfig struct {
 
 // NewCurl creates and returns a new instance of the Curl wrapper with the provided configuration.
 func NewCurl(logger observability.Logger, config CurlConfig) *Curl {
-	// Convert blocked methods to uppercase for case-insensitive comparison
 	blockedMethods := make([]string, len(config.BlockedMethods))
 	for i, method := range config.BlockedMethods {
 		blockedMethods[i] = strings.ToUpper(method)
@@ -39,6 +39,7 @@ func NewCurl(logger observability.Logger, config CurlConfig) *Curl {
 	return &Curl{
 		logger:         logger,
 		blockedMethods: blockedMethods,
+		cmdExecutor:    &RealCommandExecutor{},
 	}
 }
 
@@ -117,6 +118,26 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
+			// In your Handler function, add validation before command execution:
+			if err := validateInput(input); err != nil {
+				c.logger.WithFields(map[string]interface{}{
+					observability.ErrorLogField: err,
+				}).Error("Input validation failed")
+				span.RecordError(err)
+				return mcp.CallToolResult{}, err
+			}
+
+			// Check blocked methods after basic validation
+			if c.isMethodBlocked(input.Method) {
+				err := fmt.Errorf("HTTP method %s is blocked", input.Method)
+				c.logger.WithFields(map[string]interface{}{
+					"method": input.Method,
+					"url":    input.URL,
+				}).Error("Blocked HTTP method attempted")
+				span.RecordError(err)
+				return mcp.CallToolResult{}, err
+			}
+
 			// Validate URL
 			parsedURL, err := url.Parse(input.URL)
 			if err != nil {
@@ -127,17 +148,6 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 				span.RecordError(err)
 				return mcp.CallToolResult{}, fmt.Errorf("invalid URL: %w", err)
-			}
-
-			// Check if method is blocked
-			if c.isMethodBlocked(input.Method) {
-				err := fmt.Errorf("HTTP method %s is blocked", input.Method)
-				c.logger.WithFields(map[string]interface{}{
-					"method": input.Method,
-					"url":    input.URL,
-				}).Error("Blocked HTTP method attempted")
-				span.RecordError(err)
-				return mcp.CallToolResult{}, err
 			}
 
 			// Set span attributes
@@ -179,7 +189,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 			// Execute the command
 			cmd := exec.CommandContext(ctx, "curl", args...)
-			output, err := cmd.CombinedOutput()
+			output, err := c.cmdExecutor.ExecuteCommand(ctx, cmd)
 
 			// Log execution results
 			executionTime := time.Since(startTime)
@@ -214,4 +224,29 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			}, nil
 		},
 	}
+}
+
+func validateInput(input struct {
+	URL      string            `json:"url"`
+	Method   string            `json:"method"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+	Insecure bool              `json:"insecure"`
+}) error {
+	// Check required fields first
+	if input.Method == "" {
+		return fmt.Errorf("method is required")
+	}
+
+	if input.URL == "" {
+		return fmt.Errorf("url is required")
+	}
+
+	// Validate URL format
+	_, err := url.Parse(input.URL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	return nil
 }
