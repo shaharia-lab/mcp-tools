@@ -18,10 +18,11 @@ The tools adhere to the Model Context Protocol (MCP) specification to provide a 
 
 ## Available Tools
 
-| Tool | Name              | Description                                                          | Use-cases                                                   |
-|------|-------------------|----------------------------------------------------------------------|-------------------------------------------------------------|
-| cURL | `curl_all_in_one` | A versatile tool for making HTTP requests and interacting with APIs. | Fetching data from APIs, web scraping, testing endpoints.   |
-| git  | `git_all_in_one`  | A tool for interacting with Git repositories.                        | Managing code repositories, version control, collaboration. |
+| Tool   | Name                | Description                                                          | Use-cases                                                    |
+|--------|---------------------|----------------------------------------------------------------------|--------------------------------------------------------------|
+| cURL   | `curl_all_in_one`   | A versatile tool for making HTTP requests and interacting with APIs. | Fetching data from APIs, web scraping, testing endpoints.    |
+| git    | `git_all_in_one`    | A tool for interacting with Git repositories.                        | Managing code repositories, version control, collaboration.  |
+| docker | `docker_all_in_one` | A tool for managing Docker containers and images.                    | Building, running, and deploying applications in containers. |
 
 ## Contributing
 Contributions to this open-source package are welcome! If you'd like to contribute, please start by reviewing
