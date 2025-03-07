@@ -18,33 +18,10 @@ The tools adhere to the Model Context Protocol (MCP) specification to provide a 
 
 ## Available Tools
 
-| Tool          | Description                              | Use-cases                               |
-|---------------|------------------------------------------|-----------------------------------------|
-| DataExtractor | Extracts structured data from input.     | Parsing documents, forms, or emails.    |
-| TextAnalyzer  | Analyzes text for sentiment or keywords. | Sentiment analysis, keyword extraction. |
-| Translator    | Translates text between languages.       | Multilingual support for applications.  |
-
-### GetWeather (Dummy Tool)
-
-This is a dummy tool that returns a fixed weather forecast for a given location.
-It is used for testing purposes only.
-
-```json
-{
-  "name": "GetWeather",
-  "description": "Returns a fixed weather forecast for a given location.",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "location": {
-        "type": "string",
-        "description": "The location to get the weather forecast for."
-      }
-    },
-    "required": ["location"]
-  }
-}
-```
+| Tool | Name              | Description                                                          | Use-cases                                                   |
+|------|-------------------|----------------------------------------------------------------------|-------------------------------------------------------------|
+| cURL | `curl_all_in_one` | A versatile tool for making HTTP requests and interacting with APIs. | Fetching data from APIs, web scraping, testing endpoints.   |
+| git  | `git_all_in_one`  | A tool for interacting with Git repositories.                        | Managing code repositories, version control, collaboration. |
 
 ## Contributing
 Contributions to this open-source package are welcome! If you'd like to contribute, please start by reviewing
