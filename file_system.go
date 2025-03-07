@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
-	"go.opentelemetry.io/otel/attribute"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai/observability"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const FileSystemToolName = "filesystem_all_in_one"

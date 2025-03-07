@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
-	"go.opentelemetry.io/otel/attribute"
 	"net/url"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai/observability"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const CurlToolName = "curl_all_in_one"

@@ -3,11 +3,12 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
+	"os/exec"
+	"testing"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"os/exec"
-	"testing"
 )
 
 func TestNewCurl(t *testing.T) {

@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os/exec"
+	"time"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
 	"go.opentelemetry.io/otel/attribute"
-	"os/exec"
-	"time"
 )
 
 const DockerToolName = "docker_all_in_one"

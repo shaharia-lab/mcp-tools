@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/shaharia-lab/goai/mcp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewGit(t *testing.T) {

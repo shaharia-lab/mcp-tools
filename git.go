@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os/exec"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
 	"go.opentelemetry.io/otel/attribute"
-	"os/exec"
 )
 
 const GitToolName = "git_all_in_one"
