@@ -518,3 +518,148 @@ func TestFileSystem_Mkdir(t *testing.T) {
 
 	mockLogger.AssertExpectations(t)
 }
+
+func TestFileSystem_Search(t *testing.T) {
+	// Create mock logger with proper expectations
+	mockLogger := &MockLogger{}
+	mockLogger.On("WithFields", mock.Anything).Return(mockLogger)
+	mockLogger.On("Info", mock.Anything).Return()
+	mockLogger.On("Error", mock.Anything).Return().Maybe()
+	mockLogger.On("WithErr", mock.AnythingOfType("error")).Return(mockLogger).Maybe()
+
+	// Create temporary directory
+	tempDir, err := os.MkdirTemp("", "fs_test_*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Create test file structure
+	testFiles := map[string]string{
+		"file1.txt":        "Hello World",
+		"file2.go":         "package main\nfunc main() {}",
+		"subdir/file3.txt": "Test content",
+		"subdir/file4.go":  "package sub\nfunc Test() {}",
+	}
+
+	for path, content := range testFiles {
+		fullPath := filepath.Join(tempDir, path)
+		require.NoError(t, os.MkdirAll(filepath.Dir(fullPath), 0755))
+		require.NoError(t, os.WriteFile(fullPath, []byte(content), 0644))
+	}
+
+	fs := NewFileSystem(mockLogger, FileSystemConfig{
+		AllowedDirectory: tempDir,
+		BlockedPatterns:  []string{"*.exe", "*.dll"},
+	})
+
+	tests := []struct {
+		name      string
+		input     map[string]interface{}
+		wantErr   bool
+		checkFunc func(t *testing.T, result mcp.CallToolResult)
+	}{
+		{
+			name: "search by file pattern",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      tempDir,
+				"pattern":   "*.txt",
+				"recursive": true,
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+				assert.Contains(t, result.Content[0].Text, "file1.txt")
+				assert.Contains(t, result.Content[0].Text, "file3.txt")
+				assert.NotContains(t, result.Content[0].Text, "file2.go")
+			},
+		},
+		{
+			name: "search by content",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      tempDir,
+				"content":   "package main",
+				"recursive": true,
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+				assert.Contains(t, result.Content[0].Text, "file2.go")
+				assert.NotContains(t, result.Content[0].Text, "file4.go")
+			},
+		},
+		{
+			name: "search by pattern and content",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      tempDir,
+				"pattern":   "*.go",
+				"content":   "func Test",
+				"recursive": true,
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+				assert.Contains(t, result.Content[0].Text, "file4.go")
+				assert.NotContains(t, result.Content[0].Text, "file2.go")
+			},
+		},
+		{
+			name: "non-recursive search",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      tempDir,
+				"pattern":   "*.txt",
+				"recursive": false,
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+				assert.Contains(t, result.Content[0].Text, "file1.txt")
+				assert.NotContains(t, result.Content[0].Text, "file3.txt")
+			},
+		},
+		{
+			name: "search with no matches",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      tempDir,
+				"content":   "nonexistent content",
+				"recursive": true,
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+				assert.Equal(t, "No matches found", result.Content[0].Text)
+			},
+		},
+		{
+			name: "search in non-existent directory",
+			input: map[string]interface{}{
+				"operation": "search",
+				"path":      filepath.Join(tempDir, "nonexistent"),
+				"pattern":   "*.txt",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args, err := json.Marshal(tt.input)
+			require.NoError(t, err)
+
+			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+				Name:      FileSystemToolName,
+				Arguments: args,
+			})
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			if tt.checkFunc != nil {
+				tt.checkFunc(t, result)
+			}
+		})
+	}
+
+	mockLogger.AssertExpectations(t)
+}

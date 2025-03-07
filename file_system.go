@@ -41,29 +41,38 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 		Name:        FileSystemToolName,
 		Description: "Performs filesystem operations like list, read, write, create, delete files and directories",
 		InputSchema: json.RawMessage(`{
-            "type": "object",
-            "properties": {
-                "operation": {
-                    "type": "string",
-                    "enum": ["list", "tree", "read", "write", "create", "delete", "mkdir"],
-                    "description": "Filesystem operation to perform"
-                },
-                "path": {
-                    "type": "string",
-                    "description": "Target path for the operation"
-                },
-                "content": {
-                    "type": "string",
-                    "description": "Content for write operations"
-                },
-                "recursive": {
-                    "type": "boolean",
-                    "description": "Whether to perform operation recursively",
-                    "default": false
-                }
-            },
-            "required": ["operation", "path"]
-        }`),
+			"type": "object",
+			"properties": {
+				"operation": {
+					"type": "string",
+					"enum": ["list", "tree", "read", "write", "create", "delete", "mkdir", "search"],
+					"description": "Filesystem operation to perform"
+				},
+				"path": {
+					"type": "string",
+					"description": "Target path for the operation"
+				},
+				"content": {
+					"type": "string",
+					"description": "Content for write operations"
+				},
+				"recursive": {
+					"type": "boolean",
+					"description": "Whether to perform operation recursively",
+					"default": false
+				},
+				"minutes": {
+					"type": "integer",
+					"description": "Find files modified within last N minutes"
+				},
+				"pattern": {
+					"type": "string",
+					"description": "File name pattern to match (e.g., *.txt)"
+				}
+			},
+			"required": ["operation", "path"]
+		}`),
+
 		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
 			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			span.SetAttributes(
@@ -82,6 +91,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				Path      string `json:"path"`
 				Content   string `json:"content"`
 				Recursive bool   `json:"recursive"`
+				Pattern   string `json:"pattern"`
 			}
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
@@ -136,6 +146,8 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				result, opErr = fs.handleDelete(ctx, absPath, input.Recursive)
 			case "mkdir":
 				result, opErr = fs.handleMkdir(ctx, absPath)
+			case "search":
+				result, opErr = fs.handleSearch(ctx, absPath, input.Pattern, input.Content, input.Recursive)
 			default:
 				opErr = fmt.Errorf("unsupported operation: %s", input.Operation)
 			}
@@ -440,4 +452,95 @@ func (fs *FileSystem) validatePath(path string) error {
 		return fmt.Errorf("path matches blocked pattern: %s", path)
 	}
 	return nil
+}
+
+func (fs *FileSystem) handleSearch(ctx context.Context, root string, pattern string, searchContent string, recursive bool) (mcp.CallToolResult, error) {
+	if err := fs.validatePath(root); err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	var matches []string
+	searchContent = strings.TrimSpace(searchContent)
+
+	walkFn := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Handle directory traversal
+		if info.IsDir() {
+			// Skip subdirectories if not recursive
+			if !recursive && path != root {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Check if we should process this file
+		shouldProcess := true
+
+		// Check file pattern match if specified
+		if pattern != "" {
+			matched, err := filepath.Match(pattern, filepath.Base(path))
+			if err != nil {
+				return err
+			}
+			shouldProcess = shouldProcess && matched
+		}
+
+		// Check content if specified
+		if shouldProcess && searchContent != "" {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				fs.logger.WithFields(map[string]interface{}{
+					observability.ErrorLogField: err,
+					"path":                      path,
+				}).Error("Failed to read file for content search")
+				return nil // Skip files we can't read
+			}
+			shouldProcess = strings.Contains(string(data), searchContent)
+		}
+
+		// Add to matches if all conditions are met
+		if shouldProcess {
+			relPath, err := filepath.Rel(fs.config.AllowedDirectory, path)
+			if err != nil {
+				return err
+			}
+			matches = append(matches, relPath)
+		}
+
+		return nil
+	}
+
+	err := filepath.Walk(root, walkFn)
+	if err != nil {
+		fs.logger.WithFields(map[string]interface{}{
+			observability.ErrorLogField: err,
+			"root":                      root,
+			"pattern":                   pattern,
+			"content":                   searchContent,
+		}).Error("Failed to search files")
+		return mcp.CallToolResult{}, err
+	}
+
+	if len(matches) == 0 {
+		return mcp.CallToolResult{
+			Content: []mcp.ToolResultContent{
+				{
+					Type: "text",
+					Text: "No matches found",
+				},
+			},
+		}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.ToolResultContent{
+			{
+				Type: "text",
+				Text: strings.Join(matches, "\n"),
+			},
+		},
+	}, nil
 }
