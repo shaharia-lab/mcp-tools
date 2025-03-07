@@ -3,7 +3,7 @@ module github.com/shaharia-lab/mcp-tools
 go 1.23
 
 require (
-	github.com/shaharia-lab/goai v0.11.0
+	github.com/shaharia-lab/goai v0.11.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.24.0
 )
@@ -19,5 +19,3 @@ require (
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/shaharia-lab/goai => /home/shaharia/Projects/goai
