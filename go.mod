@@ -25,5 +25,3 @@ require (
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/shaharia-lab/goai => /home/shaharia/Projects/goai
