@@ -3,14 +3,15 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
-	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/google/go-github/v60/github"
+	"github.com/shaharia-lab/goai/mcp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupGitHubTest(t *testing.T) (*GitHub, *httptest.Server, func()) {

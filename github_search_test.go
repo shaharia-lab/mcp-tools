@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/google/go-github/v60/github"
+	"github.com/shaharia-lab/goai/mcp"
 )
 
 func TestHandleSearchOperation(t *testing.T) {
