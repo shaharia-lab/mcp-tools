@@ -13,40 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fsTestSuite struct {
-	t        *testing.T
-	fs       *FileSystem
-	tempDir  string
-	testFile string
-}
-
-func setupFSTest(t *testing.T) *fsTestSuite {
-	tempDir, err := os.MkdirTemp("", "fs_test_*")
-	require.NoError(t, err)
-
-	testFile := filepath.Join(tempDir, "test.txt")
-	err = os.WriteFile(testFile, []byte("test content"), 0644)
-	require.NoError(t, err)
-
-	config := FileSystemConfig{
-		AllowedDirectory: tempDir,
-		BlockedPatterns:  []string{"*.exe", "*.dll"},
-	}
-
-	fs := NewFileSystem(&MockLogger{}, config)
-
-	return &fsTestSuite{
-		t:        t,
-		fs:       fs,
-		tempDir:  tempDir,
-		testFile: testFile,
-	}
-}
-
-func (s *fsTestSuite) cleanup() {
-	os.RemoveAll(s.tempDir)
-}
-
 func TestFileSystem_List(t *testing.T) {
 	mockLogger := &MockLogger{}
 	// Set up base expectations for the logger

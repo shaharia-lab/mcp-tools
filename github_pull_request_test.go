@@ -78,7 +78,7 @@ func TestHandlePullRequestsOperation_Create(t *testing.T) {
 			Head:   &github.PullRequestBranch{Ref: github.String("feature-branch")},
 			Base:   &github.PullRequestBranch{Ref: github.String("main")},
 		}
-		json.NewEncoder(w).Encode(pr)
+		json.NewEncoder(w).Encode(pr) // nolint
 	})
 
 	input := map[string]interface{}{
@@ -124,7 +124,8 @@ func TestHandlePullRequestsOperation_Get(t *testing.T) {
 			Title:  github.String("Test PR"),
 			State:  github.String("open"),
 		}
-		json.NewEncoder(w).Encode(pr)
+		err := json.NewEncoder(w).Encode(pr)
+		require.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -163,7 +164,8 @@ func TestHandlePullRequestsOperation_Review(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 
 		var reviewReq github.PullRequestReviewRequest
-		json.NewDecoder(r.Body).Decode(&reviewReq)
+		err := json.NewDecoder(r.Body).Decode(&reviewReq)
+		assert.NoError(t, err)
 
 		assert.Equal(t, "LGTM!", *reviewReq.Body)
 		assert.Equal(t, "APPROVE", *reviewReq.Event)
@@ -173,7 +175,8 @@ func TestHandlePullRequestsOperation_Review(t *testing.T) {
 			State: github.String("APPROVED"),
 			Body:  github.String("LGTM!"),
 		}
-		json.NewEncoder(w).Encode(review)
+		err = json.NewEncoder(w).Encode(review)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -217,7 +220,8 @@ func TestHandlePullRequestsOperation_Merge(t *testing.T) {
 			Merged:  github.Bool(true),
 			Message: github.String("Pull Request successfully merged"),
 		}
-		json.NewEncoder(w).Encode(result)
+		err := json.NewEncoder(w).Encode(result)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -265,7 +269,8 @@ func TestHandlePullRequestsOperation_ListFiles(t *testing.T) {
 				Status:   github.String("added"),
 			},
 		}
-		json.NewEncoder(w).Encode(files)
+		err := json.NewEncoder(w).Encode(files)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
