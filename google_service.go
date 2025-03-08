@@ -6,6 +6,8 @@ import (
 	"github.com/shaharia-lab/goai/observability"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/gmail/v1"
+	"google.golang.org/api/option"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -229,4 +231,24 @@ func (s *GoogleService) authenticate(ctx context.Context) error {
 	s.mu.Unlock()
 
 	return nil
+}
+
+func (s *GoogleService) GetGmailService(ctx context.Context) (*gmail.Service, error) {
+	s.mu.RLock()
+	token := s.authToken
+	s.mu.RUnlock()
+
+	if token == nil {
+		return nil, fmt.Errorf("no authentication token available")
+	}
+
+	// Create Gmail service using the authenticated client
+	gmailService, err := gmail.NewService(ctx,
+		option.WithTokenSource(s.oauth2Cfg.TokenSource(ctx, token)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Gmail service: %w", err)
+	}
+
+	return gmailService, nil
 }
