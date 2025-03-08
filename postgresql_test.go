@@ -3,9 +3,10 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
