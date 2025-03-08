@@ -27,7 +27,8 @@ type GitHubConfig struct {
 	Token string
 }
 
-func NewGitHub(logger observability.Logger, config GitHubConfig) *GitHub {
+// NewGitHubTool to perform operations on GitHub
+func NewGitHubTool(logger observability.Logger, config GitHubConfig) *GitHub {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: config.Token},

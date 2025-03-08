@@ -26,7 +26,7 @@ type DockerConfig struct {
 }
 
 // NewDocker creates and returns a new instance of the Docker wrapper
-func NewDocker(logger observability.Logger, config DockerConfig) *Docker {
+func NewDocker(logger observability.Logger) *Docker {
 	return &Docker{
 		logger:      logger,
 		cmdExecutor: &RealCommandExecutor{},

@@ -136,19 +136,19 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 			case "list":
 				result, opErr = fs.handleList(ctx, absPath, input.Recursive)
 			case "tree":
-				result, opErr = fs.handleTree(ctx, absPath)
+				result, opErr = fs.handleTree(absPath)
 			case "read":
-				result, opErr = fs.handleRead(ctx, absPath)
+				result, opErr = fs.handleRead(absPath)
 			case "write":
-				result, opErr = fs.handleWrite(ctx, absPath, input.Content)
+				result, opErr = fs.handleWrite(absPath, input.Content)
 			case "create":
-				result, opErr = fs.handleCreate(ctx, absPath)
+				result, opErr = fs.handleCreate(absPath)
 			case "delete":
-				result, opErr = fs.handleDelete(ctx, absPath, input.Recursive)
+				result, opErr = fs.handleDelete(absPath, input.Recursive)
 			case "mkdir":
-				result, opErr = fs.handleMkdir(ctx, absPath)
+				result, opErr = fs.handleMkdir(absPath)
 			case "search":
-				result, opErr = fs.handleSearch(ctx, absPath, input.Pattern, input.Content, input.Recursive)
+				result, opErr = fs.handleSearch(absPath, input.Pattern, input.Content, input.Recursive)
 			default:
 				opErr = fmt.Errorf("unsupported operation: %s", input.Operation)
 			}
@@ -236,7 +236,7 @@ func (fs *FileSystem) handleList(ctx context.Context, path string, recursive boo
 	}, nil
 }
 
-func (fs *FileSystem) handleTree(ctx context.Context, path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleTree(path string) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -290,7 +290,7 @@ func (fs *FileSystem) handleTree(ctx context.Context, path string) (mcp.CallTool
 	}, nil
 }
 
-func (fs *FileSystem) handleRead(ctx context.Context, path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleRead(path string) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -308,7 +308,7 @@ func (fs *FileSystem) handleRead(ctx context.Context, path string) (mcp.CallTool
 	}, nil
 }
 
-func (fs *FileSystem) handleWrite(ctx context.Context, path string, content string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleWrite(path string, content string) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -325,7 +325,7 @@ func (fs *FileSystem) handleWrite(ctx context.Context, path string, content stri
 	}, nil
 }
 
-func (fs *FileSystem) handleCreate(ctx context.Context, path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleCreate(path string) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -344,7 +344,7 @@ func (fs *FileSystem) handleCreate(ctx context.Context, path string) (mcp.CallTo
 	}, nil
 }
 
-func (fs *FileSystem) handleDelete(ctx context.Context, path string, recursive bool) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleDelete(path string, recursive bool) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -378,7 +378,7 @@ func (fs *FileSystem) handleDelete(ctx context.Context, path string, recursive b
 	}, nil
 }
 
-func (fs *FileSystem) handleMkdir(ctx context.Context, path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleMkdir(path string) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
 		return mcp.CallToolResult{}, err
 	}
@@ -455,7 +455,7 @@ func (fs *FileSystem) validatePath(path string) error {
 	return nil
 }
 
-func (fs *FileSystem) handleSearch(ctx context.Context, root string, pattern string, searchContent string, recursive bool) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleSearch(root string, pattern string, searchContent string, recursive bool) (mcp.CallToolResult, error) {
 	if err := fs.validatePath(root); err != nil {
 		return mcp.CallToolResult{}, err
 	}

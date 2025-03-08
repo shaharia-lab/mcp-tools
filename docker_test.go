@@ -14,7 +14,7 @@ func TestNewDocker(t *testing.T) {
 	mockLogger := new(MockLogger)
 	mockLogger.On("WithFields", mock.Anything).Return(mockLogger)
 
-	docker := NewDocker(mockLogger, DockerConfig{})
+	docker := NewDocker(mockLogger)
 
 	assert.NotNil(t, docker)
 	assert.NotNil(t, docker.cmdExecutor)
@@ -32,7 +32,7 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 		[]byte("mock docker output"), nil,
 	)
 
-	docker := NewDocker(mockLogger, DockerConfig{})
+	docker := NewDocker(mockLogger)
 	docker.cmdExecutor = mockExecutor
 
 	tool := docker.DockerAllInOneTool()
@@ -80,7 +80,7 @@ func TestDocker_HandlerValidation(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Error", mock.Anything).Return()
 
-	docker := NewDocker(mockLogger, DockerConfig{})
+	docker := NewDocker(mockLogger)
 	docker.cmdExecutor = mockExecutor
 
 	tool := docker.DockerAllInOneTool()
