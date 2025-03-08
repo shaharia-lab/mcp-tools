@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"testing"
@@ -142,7 +143,8 @@ func TestHandleSearchOperation(t *testing.T) {
 					}
 
 					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					err := json.NewEncoder(w).Encode(tt.mockResponse)
+					assert.NoError(t, err)
 				})
 			}
 

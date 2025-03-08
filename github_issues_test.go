@@ -88,7 +88,8 @@ func TestHandleIssuesOperation_Create(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 
 		var issueReq github.IssueRequest
-		json.NewDecoder(r.Body).Decode(&issueReq)
+		err := json.NewDecoder(r.Body).Decode(&issueReq)
+		assert.NoError(t, err)
 
 		assert.Equal(t, "Test Issue", *issueReq.Title)
 		assert.Equal(t, "Test Body", *issueReq.Body)
@@ -100,7 +101,8 @@ func TestHandleIssuesOperation_Create(t *testing.T) {
 			Title:  github.String("Test Issue"),
 			Body:   github.String("Test Body"),
 		}
-		json.NewEncoder(w).Encode(issue)
+		err = json.NewEncoder(w).Encode(issue)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -147,7 +149,8 @@ func TestHandleIssuesOperation_Get(t *testing.T) {
 			Title:  github.String("Test Issue"),
 			State:  github.String("open"),
 		}
-		json.NewEncoder(w).Encode(issue)
+		err := json.NewEncoder(w).Encode(issue)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -195,7 +198,8 @@ func TestHandleIssuesOperation_List(t *testing.T) {
 				Title:  github.String("Issue 2"),
 			},
 		}
-		json.NewEncoder(w).Encode(issues)
+		err := json.NewEncoder(w).Encode(issues)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -274,14 +278,16 @@ func TestHandleIssuesOperation_Close(t *testing.T) {
 		assert.Equal(t, "PATCH", r.Method)
 
 		var issueReq map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&issueReq)
+		err := json.NewDecoder(r.Body).Decode(&issueReq)
+		assert.NoError(t, err)
 		assert.Equal(t, "closed", issueReq["state"])
 
 		issue := &github.Issue{
 			Number: github.Int(1),
 			State:  github.String("closed"),
 		}
-		json.NewEncoder(w).Encode(issue)
+		err = json.NewEncoder(w).Encode(issue)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{

@@ -60,7 +60,9 @@ func TestHandleRepositoryOperation_Create(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 
 		var repo github.Repository
-		json.NewDecoder(r.Body).Decode(&repo)
+		err := json.NewDecoder(r.Body).Decode(&repo)
+		assert.NoError(t, err)
+
 		assert.Equal(t, "test-repo", *repo.Name)
 		assert.Equal(t, "Test Repository", *repo.Description)
 		assert.True(t, *repo.Private)
@@ -71,7 +73,8 @@ func TestHandleRepositoryOperation_Create(t *testing.T) {
 			Description: github.String("Test Repository"),
 			Private:     github.Bool(true),
 		}
-		json.NewEncoder(w).Encode(response)
+		err = json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -150,7 +153,8 @@ func TestHandleRepositoryOperation_Fork(t *testing.T) {
 			Fork:  github.Bool(true),
 			Owner: &github.User{Login: github.String("forked-owner")},
 		}
-		json.NewEncoder(w).Encode(response)
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -191,7 +195,8 @@ func TestHandleRepositoryOperation_ListBranches(t *testing.T) {
 			{Name: github.String("main")},
 			{Name: github.String("develop")},
 		}
-		json.NewEncoder(w).Encode(branches)
+		err := json.NewEncoder(w).Encode(branches)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{
@@ -351,7 +356,8 @@ func TestHandleRepositoryOperation_ProtectBranch(t *testing.T) {
 		assert.Equal(t, "PUT", r.Method)
 
 		var protection github.ProtectionRequest
-		json.NewDecoder(r.Body).Decode(&protection)
+		err := json.NewDecoder(r.Body).Decode(&protection)
+		assert.NoError(t, err)
 		assert.True(t, protection.RequiredStatusChecks.Strict)
 		assert.Equal(t, 1, protection.RequiredPullRequestReviews.RequiredApprovingReviewCount)
 
@@ -363,7 +369,8 @@ func TestHandleRepositoryOperation_ProtectBranch(t *testing.T) {
 				RequiredApprovingReviewCount: 1,
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		err = json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
 	})
 
 	input := map[string]interface{}{

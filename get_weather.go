@@ -28,7 +28,7 @@ var GetWeather = mcp.Tool{
 				"required": ["location"]
 			}`),
 	Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-		ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		_, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 		span.SetAttributes(
 			attribute.String("tool_name", params.Name),
 			attribute.String("tool_argument", string(params.Arguments)),

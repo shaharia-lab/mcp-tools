@@ -102,7 +102,7 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 		if err != nil {
 			return mcp.CallToolResult{}, err
 		}
-		result, _, err = g.client.Git.CreateRef(ctx, input.Owner, input.Repo, &github.Reference{
+		result, _, _ = g.client.Git.CreateRef(ctx, input.Owner, input.Repo, &github.Reference{
 			Ref: github.String("refs/heads/" + input.Branch),
 			Object: &github.GitObject{
 				SHA: ref.Object.SHA,

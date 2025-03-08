@@ -65,7 +65,8 @@ func TestHandlePullRequestsOperation_Create(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 
 		var prReq github.NewPullRequest
-		json.NewDecoder(r.Body).Decode(&prReq)
+		err := json.NewDecoder(r.Body).Decode(&prReq)
+		assert.NoError(t, err)
 
 		assert.Equal(t, "Test PR", *prReq.Title)
 		assert.Equal(t, "Test Description", *prReq.Body)
