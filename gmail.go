@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"google.golang.org/api/gmail/v1"
+	"time"
 
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
@@ -39,8 +40,9 @@ type EmailMessage struct {
 
 // GmailConfig holds the configuration for the Gmail tool
 type GmailConfig struct {
-	// Add any configuration options here
-	UserID string // 'me' for authenticated user
+	UserID         string
+	MaxResults     int64
+	SinceLastNDays int
 }
 
 // NewGmail creates and returns a new instance of the Gmail wrapper with the provided configuration.
@@ -63,7 +65,7 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 				"operation": {
 					"type": "string",
 					"description": "Gmail operation to execute (list, send, read, delete)",
-					"enum": ["list", "send", "read", "delete"]
+					"enum": ["list", "send", "read"]
 				},
 				"message_id": {
 					"type": "string",
@@ -89,6 +91,14 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 							"description": "Email body content"
 						}
 					}
+				},
+				"max_results": {
+					"type": "integer",
+					"description": "Maximum number of results to return"
+				},
+				"days": {
+					"type": "integer",
+					"description": "Consider messages since the last N days. Maximum 20 days allowed"
 				}
 			},
 			"required": ["operation"]
@@ -107,10 +117,12 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 			}).Info("Starting Gmail operation execution")
 
 			var input struct {
-				Operation string `json:"operation"`
-				MessageID string `json:"message_id,omitempty"`
-				Query     string `json:"query,omitempty"`
-				Email     struct {
+				Operation  string `json:"operation"`
+				MessageID  string `json:"message_id,omitempty"`
+				Query      string `json:"query,omitempty"`
+				Days       int    `json:"days,omitempty"`
+				MaxResults int64  `json:"max_results,omitempty"`
+				Email      struct {
 					To      string `json:"to,omitempty"`
 					Subject string `json:"subject,omitempty"`
 					Body    string `json:"body,omitempty"`
@@ -132,13 +144,11 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 
 			switch input.Operation {
 			case "list":
-				result, err = g.listMessages(ctx, input.Query)
+				result, err = g.listMessages(ctx, input.Query, input.Days, input.MaxResults)
 			case "send":
 				result, err = g.sendMessage(ctx, input.Email.To, input.Email.Subject, input.Email.Body)
 			case "read":
 				result, err = g.readMessage(ctx, input.MessageID)
-			case "delete":
-				result, err = g.deleteMessage(ctx, input.MessageID)
 			default:
 				err = fmt.Errorf("unsupported operation: %s", input.Operation)
 			}
@@ -168,15 +178,30 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 	}
 }
 
-func (g *Gmail) listMessages(ctx context.Context, query string) (string, error) {
+func (g *Gmail) listMessages(ctx context.Context, query string, days int, maxResults int64) (string, error) {
+	// If days parameter is provided, add date range to query
+	if days > 0 {
+		// Calculate the date from X days ago
+		fromDate := time.Now().AddDate(0, 0, -days)
+		dateQuery := fmt.Sprintf("after:%s", fromDate.Format("2006/01/02"))
+
+		if query != "" {
+			query = fmt.Sprintf("%s %s", dateQuery, query)
+		} else {
+			query = dateQuery
+		}
+	}
+
 	// Create the list request
-	req := g.service.Users.Messages.List(g.config.UserID)
+	req := g.service.Users.Messages.List("me")
 	if query != "" {
 		req = req.Q(query)
 	}
 
-	// Set a reasonable page size
 	req = req.MaxResults(20)
+	if maxResults > 0 {
+		req = req.MaxResults(maxResults)
+	}
 
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
@@ -186,7 +211,7 @@ func (g *Gmail) listMessages(ctx context.Context, query string) (string, error) 
 	var messages []EmailMessage
 	for _, msg := range resp.Messages {
 		// Get full message details
-		fullMsg, err := g.service.Users.Messages.Get(g.config.UserID, msg.Id).
+		fullMsg, err := g.service.Users.Messages.Get("me", msg.Id).
 			Format("full").
 			Context(ctx).
 			Do()
@@ -243,7 +268,7 @@ func (g *Gmail) sendMessage(ctx context.Context, to, subject, body string) (stri
 		Raw: createEncodedEmail(to, subject, body), // You'll need to implement this helper
 	}
 
-	resp, err := g.service.Users.Messages.Send(g.config.UserID, &message).Do()
+	resp, err := g.service.Users.Messages.Send("me", &message).Do()
 	if err != nil {
 		return "", err
 	}
@@ -252,22 +277,13 @@ func (g *Gmail) sendMessage(ctx context.Context, to, subject, body string) (stri
 }
 
 func (g *Gmail) readMessage(ctx context.Context, messageID string) (string, error) {
-	msg, err := g.service.Users.Messages.Get(g.config.UserID, messageID).Do()
+	msg, err := g.service.Users.Messages.Get("me", messageID).Do()
 	if err != nil {
 		return "", err
 	}
 
 	// Format the message content as needed
 	return fmt.Sprintf("Message snippet: %s", msg.Snippet), nil
-}
-
-func (g *Gmail) deleteMessage(ctx context.Context, messageID string) (string, error) {
-	err := g.service.Users.Messages.Delete(g.config.UserID, messageID).Do()
-	if err != nil {
-		return "", err
-	}
-
-	return "Message deleted successfully", nil
 }
 
 func createEncodedEmail(to, subject, body string) string {
