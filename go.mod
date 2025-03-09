@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/google/go-github/v60 v60.0.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/shaharia-lab/goai v0.11.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.34.0
