@@ -65,12 +65,12 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 			"properties": {
 				"operation": {
 					"type": "string",
-					"description": "Gmail operation to execute (list, send, read, delete)",
+					"description": "Gmail operation to execute (list, send, read) emails",
 					"enum": ["list", "send", "read"]
 				},
 				"message_id": {
 					"type": "string",
-					"description": "Message ID for read/delete operations"
+					"description": "Message ID for read operations"
 				},
 				"query": {
 					"type": "string",
