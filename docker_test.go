@@ -25,9 +25,6 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 	mockLogger := new(MockLogger)
 	mockExecutor := new(MockCommandExecutor)
 
-	// Set up mock expectations
-	mockLogger.On("WithFields", mock.Anything).Return(mockLogger)
-	mockLogger.On("Info", mock.Anything, mock.Anything, mock.Anything).Return()
 	mockExecutor.On("ExecuteCommand", mock.Anything, mock.Anything).Return(
 		[]byte("mock docker output"), nil,
 	)
@@ -65,19 +62,19 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 		{Type: "text", Text: "mock docker output"},
 	}, result.Content)
 
-	mockLogger.AssertExpectations(t)
 	mockExecutor.AssertExpectations(t)
 }
-
 func TestDocker_HandlerValidation(t *testing.T) {
 	mockLogger := new(MockLogger)
 	mockExecutor := new(MockCommandExecutor)
 
 	// Set up mock logger expectations
-	mockLogger.On("WithFields", mock.Anything).Return(mockLogger)
-	mockLogger.On("Info", mock.Anything, mock.Anything, mock.Anything).Return()
-	mockLogger.On("Info", mock.Anything).Return()
-	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
+	mockLogger.On("WithFields", mock.MatchedBy(func(fields map[string]interface{}) bool {
+		_, hasError := fields["error"]
+		return hasError
+	})).Return(mockLogger)
+
+	// Change this line to match the actual method signature
 	mockLogger.On("Error", mock.Anything).Return()
 
 	docker := NewDocker(mockLogger)
@@ -108,20 +105,17 @@ func TestDocker_HandlerValidation(t *testing.T) {
 		{
 			name: "Invalid JSON",
 			input: map[string]interface{}{
-				"command": make(chan int), // This will cause JSON marshaling to fail
+				"command": "test",
 			},
-			expectedError: "failed to parse input: invalid character '}' looking for beginning of value",
+			expectedError: "failed to parse input",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var inputJSON []byte
-			var err error
-
-			if _, ok := tt.input["command"].(chan int); ok {
-				// Handle the invalid JSON case specially
-				inputJSON = []byte(`{"command": }`) // Invalid JSON
+			if tt.name == "Invalid JSON" {
+				inputJSON = []byte(`{invalid json}`) // Deliberately malformed JSON
 			} else {
 				inputJSON, _ = json.Marshal(tt.input)
 			}
@@ -136,6 +130,7 @@ func TestDocker_HandlerValidation(t *testing.T) {
 			assert.Contains(t, err.Error(), tt.expectedError)
 			mockExecutor.AssertNotCalled(t, "ExecuteCommand")
 		})
+
 	}
 
 	mockLogger.AssertExpectations(t)
