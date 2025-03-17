@@ -3,13 +3,14 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
 	"os/exec"
 )
 
-const GrepToolName = "grep_all_in_one"
+const GrepToolName = "grep"
 
 // Grep represents a wrapper around the system's grep command-line tool
 type Grep struct {
@@ -99,7 +100,8 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 
 			// Special handling for grep exit codes
 			if err != nil {
-				if exitError, ok := err.(*exec.ExitError); ok {
+				var exitError *exec.ExitError
+				if errors.As(err, &exitError) {
 					// Exit code 1 means no matches found (not an error)
 					if exitError.ExitCode() == 1 {
 						return mcp.CallToolResult{

@@ -15,12 +15,7 @@ import (
 )
 
 const (
-	GmailToolName = "gmail_all_in_one"
-	// Gmail API scopes
-	GmailReadScope   = gmail.GmailReadonlyScope // For reading emails
-	GmailSendScope   = gmail.GmailSendScope     // For sending emails
-	GmailModifyScope = gmail.GmailModifyScope   // For modifying/deleting emails
-	GmailFullScope   = gmail.MailGoogleComScope // Full access
+	GmailToolName = "gmail"
 )
 
 // Gmail represents a wrapper around the Gmail API service,

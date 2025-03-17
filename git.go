@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const GitToolName = "git_all_in_one"
+const GitToolName = "git"
 
 // Git represents a wrapper around the system's git command-line tool,
 // providing a programmatic interface for executing git commands.

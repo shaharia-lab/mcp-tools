@@ -9,7 +9,7 @@ import (
 	"os/exec"
 )
 
-const BashToolName = "bash_all_in_one"
+const BashToolName = "bash"
 
 // Bash represents a wrapper around the system's bash command-line tool
 type Bash struct {

@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const FileSystemToolName = "filesystem_all_in_one"
+const FileSystemToolName = "filesystem"
 
 // FileSystem represents a wrapper around filesystem operations
 type FileSystem struct {

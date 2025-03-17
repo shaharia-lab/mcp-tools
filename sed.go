@@ -9,7 +9,7 @@ import (
 	"os/exec"
 )
 
-const SedToolName = "sed_all_in_one"
+const SedToolName = "sed"
 
 // Sed represents a wrapper around the system's sed command-line tool
 type Sed struct {

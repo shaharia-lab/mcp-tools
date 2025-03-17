@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const CurlToolName = "curl_all_in_one"
+const CurlToolName = "curl"
 
 // Curl represents a wrapper around the system's curl command-line tool,
 // providing a programmatic interface for making HTTP requests.

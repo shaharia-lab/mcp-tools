@@ -16,7 +16,7 @@ import (
 )
 
 // PostgreSQLToolName is the name of the PostgreSQL tool
-const PostgreSQLToolName = "postgresql_all_in_one"
+const PostgreSQLToolName = "postgresql"
 
 // PostgreSQL represents a tool for performing PostgreSQL operations
 type PostgreSQL struct {

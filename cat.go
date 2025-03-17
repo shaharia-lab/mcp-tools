@@ -9,7 +9,7 @@ import (
 	"os/exec"
 )
 
-const CatToolName = "cat_all_in_one"
+const CatToolName = "cat"
 
 // Cat represents a wrapper around the system's cat command-line tool
 type Cat struct {

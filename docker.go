@@ -9,7 +9,7 @@ import (
 	"os/exec"
 )
 
-const DockerToolName = "docker_all_in_one"
+const DockerToolName = "docker"
 
 // Docker represents a wrapper around the system's docker command-line tool
 type Docker struct {
