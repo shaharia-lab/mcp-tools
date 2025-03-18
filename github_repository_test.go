@@ -3,9 +3,10 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/google/go-github/v60/github"
 	"github.com/shaharia-lab/goai/mcp"

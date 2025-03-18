@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os/exec"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
-	"os/exec"
 )
 
 const DockerToolName = "docker"
