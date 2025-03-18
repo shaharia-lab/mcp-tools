@@ -73,7 +73,7 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 			g.logger.WithFields(map[string]interface{}{
 				"tool_name": params.Name,
 				"arguments": string(params.Arguments),
-			}).Info("Starting git command execution")
+			}).Info("Received input")
 
 			var input struct {
 				Command  string   `json:"command"`
@@ -84,6 +84,7 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
 					observability.ErrorLogField: err,
+					"tool":                      GitToolName,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 
@@ -92,6 +93,13 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 			}
 
 			args := append([]string{"-C", input.RepoPath, input.Command}, input.Args...)
+
+			g.logger.WithFields(map[string]interface{}{
+				"command":   input.Command,
+				"repo_path": input.RepoPath,
+				"args":      args,
+			}).Debug("Executing git command")
+
 			cmd := exec.CommandContext(ctx, "git", args...)
 
 			g.logger.WithFields(map[string]interface{}{
@@ -109,10 +117,11 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 				}).Error("Git command failed")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("git %s error: %w\nOutput: %s", input.Command, err, string(output))
+				return returnErrorOutput(err), nil
 			}
 
 			g.logger.WithFields(map[string]interface{}{
+				"tool":    GitToolName,
 				"command": input.Command,
 				"output":  string(output),
 			}).Debug("Git command completed successfully")

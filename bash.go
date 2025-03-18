@@ -53,7 +53,10 @@ func (b *Bash) BashAllInOneTool() mcp.Tool {
 				Args    []string `json:"args"`
 			}
 
+			b.logger.WithFields(map[string]interface{}{"tool": BashToolName}).Info("Received input", "input", string(params.Arguments))
+
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
+				b.logger.WithFields(map[string]interface{}{"tool": BashToolName}).Error("Failed to parse input", "error", err)
 				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
@@ -61,11 +64,14 @@ func (b *Bash) BashAllInOneTool() mcp.Tool {
 			cmd := exec.Command("bash", append([]string{"-c", input.Command}, input.Args...)...)
 			output, err := b.cmdExecutor.ExecuteCommand(ctx, cmd)
 			if err != nil {
-				return mcp.CallToolResult{}, fmt.Errorf("bash command failed: %w", err)
+				b.logger.WithFields(map[string]interface{}{"tool": BashToolName}).Error("Failed to execute bash command", "error", err)
+				return returnErrorOutput(err), nil
 			}
 
+			o := string(output)
+			b.logger.WithFields(map[string]interface{}{"tool": BashToolName, "output_length": len(o)}).Info("Bash command executed successfully")
 			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{Type: "text", Text: string(output)}},
+				Content: []mcp.ToolResultContent{{Type: "text", Text: o}},
 				IsError: false,
 			}, nil
 		},

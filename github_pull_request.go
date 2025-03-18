@@ -71,6 +71,11 @@ func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params mcp.Cal
 	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
+	g.logger.WithFields(map[string]interface{}{
+		"tool":      params.Name,
+		"operation": params.Arguments,
+	}).Info("handling pull requests operation")
+
 	var input struct {
 		Operation     string `json:"operation"`
 		Owner         string `json:"owner"`
@@ -118,17 +123,25 @@ func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params mcp.Cal
 	case "list_files":
 		result, _, err = g.client.PullRequests.ListFiles(ctx, input.Owner, input.Repo, input.Number, &github.ListOptions{})
 	default:
-		return mcp.CallToolResult{}, fmt.Errorf("unsupported operation: %s", input.Operation)
+		return returnErrorOutput(fmt.Errorf("unsupported operation: %s", input.Operation)), nil
 	}
 
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		return returnErrorOutput(fmt.Errorf("github pull request %s error: %w", input.Operation, err)), nil
 	}
+
+	m := mustMarshal(result)
+
+	g.logger.WithFields(map[string]interface{}{
+		"tool":          GitHubPullRequestsToolName,
+		"operation":     input.Operation,
+		"result_length": len(m),
+	}).Info("GitHub pull request operation completed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
 			Type: "json",
-			Text: mustMarshal(result),
+			Text: m,
 		}},
 	}, nil
 }

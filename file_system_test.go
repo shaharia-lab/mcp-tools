@@ -60,7 +60,7 @@ func TestFileSystem_List(t *testing.T) {
 				"operation": "list",
 				"path":      filepath.Join(tempDir, "nonexistent"),
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "list outside allowed directory",
@@ -68,7 +68,7 @@ func TestFileSystem_List(t *testing.T) {
 				"operation": "list",
 				"path":      "/",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
@@ -141,7 +141,7 @@ func TestFileSystem_Read(t *testing.T) {
 				"operation": "read",
 				"path":      filepath.Join(tempDir, "nonexistent.txt"),
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestFileSystem_Write(t *testing.T) {
 				"path":      filepath.Join(tempDir, "test.exe"),
 				"content":   "blocked content",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
@@ -602,7 +602,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"path":      filepath.Join(tempDir, "nonexistent"),
 				"pattern":   "*.txt",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 

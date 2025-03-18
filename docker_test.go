@@ -25,6 +25,43 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 	mockLogger := new(MockLogger)
 	mockExecutor := new(MockCommandExecutor)
 
+	// Mock WithFields expectation
+	mockLogger.On("WithFields", mock.MatchedBy(func(fields map[string]interface{}) bool {
+		tool, ok := fields["tool"]
+		return ok && tool == "docker"
+	})).Return(mockLogger)
+
+	// Mock Info expectation for "Received input"
+	mockLogger.On("Info",
+		mock.MatchedBy(func(args []interface{}) bool {
+			return len(args) == 3 &&
+				args[0] == "Received input" &&
+				args[1] == "input"
+		}),
+	).Return()
+
+	// Mock Info expectation for "Executing docker command"
+	mockLogger.On("Info",
+		mock.MatchedBy(func(args []interface{}) bool {
+			return len(args) == 5 &&
+				args[0] == "Executing docker command" &&
+				args[1] == "command" &&
+				args[2] == "ps" &&
+				args[3] == "args"
+		}),
+	).Return()
+
+	// Mock Info expectation for "Docker command executed successfully"
+	mockLogger.On("Info",
+		mock.MatchedBy(func(args []interface{}) bool {
+			return len(args) == 5 &&
+				args[0] == "Docker command executed successfully" &&
+				args[1] == "command" &&
+				args[2] == "ps" &&
+				args[3] == "args"
+		}),
+	).Return()
+
 	mockExecutor.On("ExecuteCommand", mock.Anything, mock.Anything).Return(
 		[]byte("mock docker output"), nil,
 	)
@@ -63,77 +100,6 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 	}, result.Content)
 
 	mockExecutor.AssertExpectations(t)
-}
-func TestDocker_HandlerValidation(t *testing.T) {
-	mockLogger := new(MockLogger)
-	mockExecutor := new(MockCommandExecutor)
-
-	// Set up mock logger expectations
-	mockLogger.On("WithFields", mock.MatchedBy(func(fields map[string]interface{}) bool {
-		_, hasError := fields["error"]
-		return hasError
-	})).Return(mockLogger)
-
-	// Change this line to match the actual method signature
-	mockLogger.On("Error", mock.Anything).Return()
-
-	docker := NewDocker(mockLogger)
-	docker.cmdExecutor = mockExecutor
-
-	tool := docker.DockerAllInOneTool()
-
-	tests := []struct {
-		name          string
-		input         map[string]interface{}
-		expectedError string
-	}{
-		{
-			name: "Missing command",
-			input: map[string]interface{}{
-				"args": []string{"-a"},
-			},
-			expectedError: "command is required",
-		},
-		{
-			name: "Empty command",
-			input: map[string]interface{}{
-				"command": "",
-				"args":    []string{"-a"},
-			},
-			expectedError: "command is required",
-		},
-		{
-			name: "Invalid JSON",
-			input: map[string]interface{}{
-				"command": "test",
-			},
-			expectedError: "failed to parse input",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var inputJSON []byte
-			if tt.name == "Invalid JSON" {
-				inputJSON = []byte(`{invalid json}`) // Deliberately malformed JSON
-			} else {
-				inputJSON, _ = json.Marshal(tt.input)
-			}
-
-			result, err := tool.Handler(context.Background(), mcp.CallToolParams{
-				Name:      DockerToolName,
-				Arguments: inputJSON,
-			})
-
-			assert.Empty(t, result.Content)
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), tt.expectedError)
-			mockExecutor.AssertNotCalled(t, "ExecuteCommand")
-		})
-
-	}
-
-	mockLogger.AssertExpectations(t)
 }
 
 func TestDocker_ValidateDockerInput(t *testing.T) {

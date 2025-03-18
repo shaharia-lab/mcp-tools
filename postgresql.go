@@ -117,14 +117,14 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 
 			// For all other operations, we need a database
 			if input.Database == "" {
-				return mcp.CallToolResult{}, fmt.Errorf("database identifier is required for operation: %s", input.Operation)
+				return returnErrorOutput(fmt.Errorf("database identifier is required for operation: %s", input.Operation)), nil
 			}
 
 			// Get database connection
 			db, err := p.getConnection(input.Database)
 			if err != nil {
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(fmt.Errorf("failed to get database connection: %w", err)), nil
 			}
 
 			switch input.Operation {
@@ -142,7 +142,7 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 
 			case "schema":
 				if input.Table == "" {
-					return mcp.CallToolResult{}, fmt.Errorf("table is required for operation 'schema'")
+					return returnErrorOutput(fmt.Errorf("table is required for operation 'schema'")), nil
 				}
 				return p.getTableSchema(ctx, db, input.Table)
 
@@ -157,6 +157,12 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 }
 
 func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string) (mcp.CallToolResult, error) {
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "executeQuery",
+		"query":     query,
+	}).Info("Executing query")
+
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return mcp.CallToolResult{}, err
@@ -165,7 +171,7 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		return returnErrorOutput(err), nil
 	}
 
 	var result strings.Builder
@@ -179,8 +185,8 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(valuePtrs...); err != nil {
-			return mcp.CallToolResult{}, err
+		if err = rows.Scan(valuePtrs...); err != nil {
+			return returnErrorOutput(err), nil
 		}
 
 		var rowValues []string
@@ -189,6 +195,12 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 		}
 		result.WriteString(strings.Join(rowValues, " | ") + "\n")
 	}
+
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "executeQuery",
+		"query":     query,
+	}).Info("Query executed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
@@ -199,9 +211,20 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 }
 
 func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query string) (mcp.CallToolResult, error) {
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "executeExplain",
+		"query":     query,
+	}).Info("Executing explain")
+
 	rows, err := db.QueryContext(ctx, "EXPLAIN ANALYZE "+query)
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		p.logger.WithFields(map[string]interface{}{
+			observability.ErrorLogField: err,
+			"query":                     query,
+		}).Error("Failed to execute explain query")
+
+		return returnErrorOutput(err), nil
 	}
 	defer rows.Close()
 
@@ -209,10 +232,16 @@ func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query strin
 	for rows.Next() {
 		var line string
 		if err := rows.Scan(&line); err != nil {
-			return mcp.CallToolResult{}, err
+			return returnErrorOutput(err), nil
 		}
 		explain.WriteString(line + "\n")
 	}
+
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "executeExplain",
+		"query":     query,
+	}).Info("Explain executed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
@@ -223,6 +252,12 @@ func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query strin
 }
 
 func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName string) (mcp.CallToolResult, error) {
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "getTableSchema",
+		"table":     tableName,
+	}).Info("Retrieving table schema")
+
 	query := `
         SELECT column_name, data_type, character_maximum_length, 
                is_nullable, column_default
@@ -233,7 +268,7 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 
 	rows, err := db.QueryContext(ctx, query, tableName)
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		return returnErrorOutput(err), nil
 	}
 	defer rows.Close()
 
@@ -248,8 +283,8 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 			maxLength                        sql.NullInt64
 			defaultValue                     sql.NullString
 		)
-		if err := rows.Scan(&columnName, &dataType, &maxLength, &isNullable, &defaultValue); err != nil {
-			return mcp.CallToolResult{}, err
+		if err = rows.Scan(&columnName, &dataType, &maxLength, &isNullable, &defaultValue); err != nil {
+			return returnErrorOutput(err), nil
 		}
 
 		schema.WriteString(fmt.Sprintf("%s | %s | %v | %s | %s\n",
@@ -259,6 +294,12 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 			isNullable,
 			defaultValue.String))
 	}
+
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "getTableSchema",
+		"table":     tableName,
+	}).Info("Table schema retrieved successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
@@ -270,6 +311,11 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 
 // New helper method to list available databases
 func (p *PostgreSQL) listAvailableDatabases() mcp.CallToolResult {
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "listAvailableDatabases",
+	}).Info("Listing available databases")
+
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -277,6 +323,12 @@ func (p *PostgreSQL) listAvailableDatabases() mcp.CallToolResult {
 	for dbName := range p.connPool {
 		databases = append(databases, dbName)
 	}
+
+	p.logger.WithFields(map[string]interface{}{
+		"tool":      PostgreSQLToolName,
+		"operation": "listAvailableDatabases",
+		"databases": databases,
+	}).Info("Databases listed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{

@@ -3,6 +3,7 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
@@ -62,16 +63,13 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 				Options    []string `json:"options"`
 			}
 
+			s.logger.WithFields(map[string]interface{}{
+				"tool":      params.Name,
+				"arguments": params.Arguments,
+			}).Info("Executing sed command")
+
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
-				return mcp.CallToolResult{
-					Content: []mcp.ToolResultContent{
-						{
-							Type: "text",
-							Text: fmt.Sprintf("Failed to parse input: %s", err.Error()),
-						},
-					},
-					IsError: true,
-				}, nil
+				return returnErrorOutput(fmt.Errorf("failed to unmarshal. err: %w", err)), nil
 			}
 
 			args := append(input.Options, input.Expression)
@@ -84,7 +82,8 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 			output, err := s.cmdExecutor.ExecuteCommand(ctx, cmd)
 
 			if err != nil {
-				if exitError, ok := err.(*exec.ExitError); ok {
+				var exitError *exec.ExitError
+				if errors.As(err, &exitError) {
 					errorMsg := string(exitError.Stderr)
 					if errorMsg == "" {
 						errorMsg = err.Error()
@@ -98,30 +97,22 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 						"stderr":                    errorMsg,
 					}).Error("Sed command execution failed")
 
-					return mcp.CallToolResult{
-						Content: []mcp.ToolResultContent{
-							{
-								Type: "text",
-								Text: fmt.Sprintf("Sed command failed (exit code %d): %s\nCommand: sed %v",
-									exitError.ExitCode(), errorMsg, args),
-							},
-						},
-						IsError: true,
-					}, nil
+					return returnErrorOutput(fmt.Errorf("sed command failed (exit code %d): %s. Error: %w", exitError.ExitCode(), errorMsg, err)), nil
 				}
 
-				// Handle non-exit errors
-				return mcp.CallToolResult{
-					Content: []mcp.ToolResultContent{
-						{
-							Type: "text",
-							Text: fmt.Sprintf("Command execution error: %s\nCommand: sed %v",
-								err.Error(), args),
-						},
-					},
-					IsError: true,
-				}, nil
+				s.logger.WithFields(map[string]interface{}{
+					observability.ErrorLogField: err,
+					"command":                   "sed",
+					"args":                      args,
+				}).Error("Sed command execution failed")
+
+				return returnErrorOutput(fmt.Errorf("send command execution failed. Error; %w", err)), nil
 			}
+
+			s.logger.WithFields(map[string]interface{}{
+				"command": "sed",
+				"args":    args,
+			}).Info("Sed command executed successfully")
 
 			return mcp.CallToolResult{
 				Content: []mcp.ToolResultContent{{Type: "text", Text: string(output)}},

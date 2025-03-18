@@ -156,12 +156,13 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 				}).Error("Gmail operation failed")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("gmail %s error: %w", input.Operation, err)
+				return returnErrorOutput(err), nil
 			}
 
 			g.logger.WithFields(map[string]interface{}{
-				"operation": input.Operation,
-				"result":    result,
+				"tool":          GmailToolName,
+				"operation":     input.Operation,
+				"result_length": len(result),
 			}).Debug("Gmail operation completed successfully")
 
 			return mcp.CallToolResult{

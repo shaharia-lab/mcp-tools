@@ -62,6 +62,11 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 				Options []string `json:"options"`
 			}
 
+			g.logger.WithFields(map[string]interface{}{
+				"tool_name": params.Name,
+				"arguments": string(params.Arguments),
+			}).Info("Executing grep command")
+
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
 					observability.ErrorLogField: err,
@@ -76,7 +81,7 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 					observability.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			// Ensure recursive search is enabled if a directory is provided
@@ -93,6 +98,13 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 
 			args := append(input.Options, "-E")
 			args = append(args, input.Pattern, input.Path)
+
+			g.logger.WithFields(map[string]interface{}{
+				"tool":    GrepToolName,
+				"command": "grep",
+				"args":    args,
+			}).Info("Executing grep command", "args", args)
+
 			cmd := exec.Command("grep", args...)
 
 			// Execute the command using the executor
@@ -150,6 +162,11 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 					IsError: true,
 				}, nil
 			}
+
+			g.logger.WithFields(map[string]interface{}{
+				"tool":          GrepToolName,
+				"output_lenght": len(string(output)),
+			}).Info("Grep command executed successfully")
 
 			return mcp.CallToolResult{
 				Content: []mcp.ToolResultContent{

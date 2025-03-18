@@ -3,6 +3,7 @@ package mcptools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
@@ -56,25 +57,32 @@ func (c *Cat) CatAllInOneTool() mcp.Tool {
 				Options []string `json:"options"`
 			}
 
+			c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Info("Received input", "input", string(params.Arguments))
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
 			if len(input.Files) == 0 {
-				return mcp.CallToolResult{}, fmt.Errorf("at least one file must be specified")
+				c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Error("At least one file must be specified")
+				return returnErrorOutput(errors.New("at least one file must be specified")), nil
 			}
+
+			c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Info("Total files to read", "total_files", len(input.Files))
 
 			args := append(input.Options, input.Files...)
 
-			c.logger.Info("Executing cat command", "files", input.Files, "options", input.Options)
+			c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Info("Executing cat command", "files", input.Files, "options", input.Options)
 			cmd := exec.Command("cat", args...)
 			output, err := c.cmdExecutor.ExecuteCommand(ctx, cmd)
 			if err != nil {
-				return mcp.CallToolResult{}, fmt.Errorf("cat command failed: %w", err)
+				c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Error("Failed to execute cat command", "error", err)
+				return returnErrorOutput(err), nil
 			}
 
+			o := string(output)
+			c.logger.WithFields(map[string]interface{}{"tool": CatToolName, "output_length": len(o)}).Info("Successfully executed cat command")
 			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{Type: "text", Text: string(output)}},
+				Content: []mcp.ToolResultContent{{Type: "text", Text: o}},
 				IsError: false,
 			}, nil
 		},

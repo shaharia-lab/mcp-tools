@@ -68,6 +68,11 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 		SourceBranch string `json:"source_branch"`
 	}
 
+	g.logger.WithFields(map[string]interface{}{
+		"tool":      params.Name,
+		"operation": params.Arguments,
+	}).Info("handling repository operation")
+
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
 		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
@@ -119,17 +124,30 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 				},
 			})
 	default:
-		return mcp.CallToolResult{}, fmt.Errorf("unsupported operation: %s", input.Operation)
+		return returnErrorOutput(fmt.Errorf("unsupported operation: %s", input.Operation)), nil
 	}
 
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		g.logger.WithFields(map[string]interface{}{
+			"tool":                      params.Name,
+			observability.ErrorLogField: err,
+			"operation":                 input.Operation,
+		}).Error("GitHub repository operation failed")
+
+		return returnErrorOutput(fmt.Errorf("github repository %s error: %w", input.Operation, err)), nil
 	}
+
+	m := mustMarshal(result)
+	g.logger.WithFields(map[string]interface{}{
+		"tool":          params.Name,
+		"operation":     input.Operation,
+		"result_length": len(m),
+	}).Info("GitHub repository operation completed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
 			Type: "json",
-			Text: mustMarshal(result),
+			Text: m,
 		}},
 	}, nil
 }
