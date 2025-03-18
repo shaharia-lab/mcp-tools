@@ -64,6 +64,11 @@ func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolP
 	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
+	g.logger.WithFields(map[string]interface{}{
+		"tool_name": params.Name,
+		"operation": params.Arguments,
+	}).Info("handling issues operation")
+
 	var input struct {
 		Operation string   `json:"operation"`
 		Owner     string   `json:"owner"`
@@ -111,17 +116,31 @@ func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolP
 			State: &state,
 		})
 	default:
-		return mcp.CallToolResult{}, fmt.Errorf("unsupported operation: %s", input.Operation)
+		return returnErrorOutput(fmt.Errorf("unsupported operation: %s", input.Operation)), nil
 	}
 
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		g.logger.WithFields(map[string]interface{}{
+			"tool":                      params.Name,
+			observability.ErrorLogField: err,
+			"operation":                 input.Operation,
+		}).Error("GitHub issues operation failed")
+
+		return returnErrorOutput(err), nil
 	}
+
+	marshalledResult := mustMarshal(result)
+
+	g.logger.WithFields(map[string]interface{}{
+		"tool":          params.Name,
+		"operation":     input.Operation,
+		"result_length": len(marshalledResult),
+	}).Info("GitHub issues operation completed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
 			Type: "json",
-			Text: mustMarshal(result),
+			Text: marshalledResult,
 		}},
 	}, nil
 }

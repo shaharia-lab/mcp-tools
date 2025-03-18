@@ -22,14 +22,14 @@ The tools adhere to the Model Context Protocol (MCP) specification to provide a 
 
 | Tool   | Name                   | Description                                                                     | Use-cases                                                                   |
 |--------|------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| cURL   | `curl_all_in_one`      | A versatile tool for making HTTP requests and interacting with APIs.            | Fetching data from APIs, web scraping, testing endpoints.                   |
-| git    | `git_all_in_one`       | A tool for interacting with Git repositories.                                   | Managing code repositories, version control, collaboration.                 |
-| docker | `docker_all_in_one`    | A tool for managing Docker containers and images.                               | Building, running, and deploying applications in containers.                |
+| cURL   | `curl`                 | A versatile tool for making HTTP requests and interacting with APIs.            | Fetching data from APIs, web scraping, testing endpoints.                   |
+| git    | `git`                  | A tool for interacting with Git repositories.                                   | Managing code repositories, version control, collaboration.                 |
+| docker | `docker`               | A tool for managing Docker containers and images.                               | Building, running, and deploying applications in containers.                |
 | github | `github_issues`        | Manages GitHub issues - create, list, update, comment on issues.                | Managing GitHub issues. Required `GITHUB_TOKEN` environment variable        |
 | github | `github_pull_requests` | Manages GitHub pull requests - create, review, merge.                           | Managing GitHub pull requests. Required `GITHUB_TOKEN` environment variable |
 | github | `github_repository`    | Manages GitHub repositories - create, delete, update, fork.                     | Repository management. Required `GITHUB_TOKEN` environment variable         |
 | github | `github_search`        | Performs GitHub search operations across repositories, code, issues, and users. | Advanced GitHub searches. Required `GITHUB_TOKEN` environment variable      |
-| gmail  | `gmail_all_in_one`     | Gmail operation to execute (list, send, read, delete).                          | Managing Gmail operations                                                   |
+| gmail  | `gmail`                | Gmail operation to execute (list, send, read, delete).                          | Managing Gmail operations                                                   |
 
 ## Contributing
 Contributions to this open-source package are welcome! If you'd like to contribute, please start by reviewing

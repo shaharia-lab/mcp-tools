@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os/exec"
+
 	"github.com/shaharia-lab/goai/mcp"
 	"github.com/shaharia-lab/goai/observability"
-	"os/exec"
 )
 
-const DockerToolName = "docker_all_in_one"
+const DockerToolName = "docker"
 
 // Docker represents a wrapper around the system's docker command-line tool
 type Docker struct {
@@ -58,6 +59,10 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 				Args    []string `json:"args"`
 			}
 
+			d.logger.WithFields(map[string]interface{}{
+				"tool": DockerToolName,
+			}).Info("Received input", "input", string(params.Arguments))
+
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				d.logger.WithFields(map[string]interface{}{
 					observability.ErrorLogField: err,
@@ -72,12 +77,16 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 					observability.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			// Create the command with plain text output format
 			args := append([]string{input.Command}, input.Args...)
 			cmd := exec.Command("docker", args...)
+
+			d.logger.WithFields(map[string]interface{}{
+				"tool": DockerToolName,
+			}).Info("Executing docker command", "command", input.Command, "args", input.Args)
 
 			// Execute the command using the executor
 			output, err := d.cmdExecutor.ExecuteCommand(ctx, cmd)
@@ -88,10 +97,13 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 					"args":                      args,
 				}).Error("Docker command execution failed")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("docker command failed: %w", err)
+				return returnErrorOutput(err), nil
 			}
 
-			// Return plain text output
+			d.logger.WithFields(map[string]interface{}{
+				"tool": DockerToolName,
+			}).Info("Docker command executed successfully", "command", input.Command, "args", input.Args)
+
 			return mcp.CallToolResult{
 				Content: []mcp.ToolResultContent{
 					{

@@ -60,6 +60,11 @@ func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolP
 		Order     string `json:"order"`
 	}
 
+	g.logger.WithFields(map[string]interface{}{
+		"tool":          params.Name,
+		"tool_argument": string(params.Arguments),
+	}).Info("Received input")
+
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
 		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
@@ -71,6 +76,15 @@ func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolP
 		Sort:  input.Sort,
 		Order: input.Order,
 	}
+
+	g.logger.WithFields(map[string]interface{}{
+		"tool":      params.Name,
+		"operation": input.Operation,
+		"query":     input.Query,
+		"language":  input.Language,
+		"sort":      input.Sort,
+		"order":     input.Order,
+	}).Info("Handling search operation")
 
 	// Append language to query if specified
 	if input.Language != "" && input.Operation == "code" {
@@ -87,17 +101,29 @@ func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolP
 	case "users":
 		result, _, err = g.client.Search.Users(ctx, input.Query, searchOpts)
 	default:
-		return mcp.CallToolResult{}, fmt.Errorf("unsupported operation: %s", input.Operation)
+		return returnErrorOutput(fmt.Errorf("unsupported operation: %s", input.Operation)), nil
 	}
 
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		g.logger.WithFields(map[string]interface{}{
+			"operation": input.Operation,
+			"error":     err,
+		}).Error("GitHub search operation failed")
+
+		return returnErrorOutput(err), nil
 	}
+
+	m := mustMarshal(result)
+	g.logger.WithFields(map[string]interface{}{
+		"tool":          GitHubSearchToolName,
+		"operation":     input.Operation,
+		"result_length": len(m),
+	}).Info("GitHub search operation completed successfully")
 
 	return mcp.CallToolResult{
 		Content: []mcp.ToolResultContent{{
 			Type: "json",
-			Text: mustMarshal(result),
+			Text: m,
 		}},
 	}, nil
 }

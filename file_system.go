@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const FileSystemToolName = "filesystem_all_in_one"
+const FileSystemToolName = "filesystem"
 
 // FileSystem represents a wrapper around filesystem operations
 type FileSystem struct {
@@ -83,7 +83,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 			defer span.End()
 
 			fs.logger.WithFields(map[string]interface{}{
-				"tool_name": params.Name,
+				"tool":      params.Name,
 				"arguments": string(params.Arguments),
 			}).Info("Starting filesystem operation")
 
@@ -102,7 +102,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				}).Error("Failed to unmarshal input parameters")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+				return returnErrorOutput(err), nil
 			}
 
 			// Validate path is within allowed directory
@@ -114,11 +114,11 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				}).Error("Failed to resolve absolute path")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			if !fs.isPathAllowed(absPath) {
-				err := fmt.Errorf("path outside allowed directory: %s", input.Path)
+				err = fmt.Errorf("path outside allowed directory: %s", input.Path)
 				fs.logger.WithFields(map[string]interface{}{
 					observability.ErrorLogField: err,
 					"path":                      input.Path,
@@ -126,11 +126,17 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				}).Error("Access denied")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			var result mcp.CallToolResult
 			var opErr error
+
+			fs.logger.WithFields(map[string]interface{}{
+				"tool":      FileSystemToolName,
+				"operation": input.Operation,
+				"path":      input.Path,
+			}).Info("Executing filesystem operation")
 
 			switch input.Operation {
 			case "list":
@@ -158,13 +164,15 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 					observability.ErrorLogField: opErr,
 					"operation":                 input.Operation,
 					"path":                      input.Path,
+					"tool":                      FileSystemToolName,
 				}).Error("Operation failed")
 
 				span.RecordError(opErr)
-				return mcp.CallToolResult{}, opErr
+				return returnErrorOutput(opErr), nil
 			}
 
 			fs.logger.WithFields(map[string]interface{}{
+				"tool":      FileSystemToolName,
 				"operation": input.Operation,
 				"path":      input.Path,
 			}).Info("Operation completed successfully")

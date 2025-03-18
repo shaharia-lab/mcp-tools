@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const CurlToolName = "curl_all_in_one"
+const CurlToolName = "curl"
 
 // Curl represents a wrapper around the system's curl command-line tool,
 // providing a programmatic interface for making HTTP requests.
@@ -96,10 +96,10 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 			startTime := time.Now()
 			c.logger.WithFields(map[string]interface{}{
-				"tool_name": params.Name,
+				"tool":      params.Name,
 				"arguments": string(params.Arguments),
 				"timestamp": startTime.Format(time.RFC3339),
-			}).Info("Starting curl request execution")
+			}).Info("Received input")
 
 			var input struct {
 				URL      string            `json:"url"`
@@ -125,7 +125,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 					observability.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			// Check blocked methods after basic validation
@@ -136,7 +136,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 					"url":    input.URL,
 				}).Error("Blocked HTTP method attempted")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, err
+				return returnErrorOutput(err), nil
 			}
 
 			// Validate URL
@@ -148,7 +148,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 				}).Error("Invalid URL provided")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("invalid URL: %w", err)
+				return returnErrorOutput(err), nil
 			}
 
 			// Set span attributes
@@ -197,11 +197,10 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			if err != nil {
 				c.logger.WithFields(map[string]interface{}{
 					observability.ErrorLogField: err,
-					"output":                    string(output),
 					"duration_ms":               executionTime.Milliseconds(),
 				}).Error("Curl command failed")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("curl command failed: %w", err)
+				return returnErrorOutput(err), nil
 			}
 
 			c.logger.Info("Curl command completed successfully",
@@ -214,6 +213,11 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 				attribute.Int64("duration_ms", executionTime.Milliseconds()),
 				attribute.Int("response_size", len(output)),
 			)
+
+			c.logger.WithFields(map[string]interface{}{
+				"tool":          CurlToolName,
+				"output_length": len(output),
+			}).Info("Curl command executed successfully")
 
 			return mcp.CallToolResult{
 				Content: []mcp.ToolResultContent{
