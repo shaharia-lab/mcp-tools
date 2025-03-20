@@ -284,7 +284,7 @@ func (j *JiraClient) SearchIssuesTool() mcp.Tool {
 					"items": {
 						"type": "string"
 					},
-					"description": "List of fields to include in the results"
+					"description": "List of fields to include in the results for /rest/api/2/search JIRA API endpoint"
 				}
 			},
 			"required": ["jql"]
@@ -303,7 +303,7 @@ func (j *JiraClient) SearchIssuesTool() mcp.Tool {
 
 			// Set default values if not provided
 			if input.MaxResults == 0 {
-				input.MaxResults = 50
+				input.MaxResults = 5
 			}
 
 			// Build the request payload
