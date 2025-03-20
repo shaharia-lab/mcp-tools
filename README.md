@@ -3,16 +3,12 @@
 ## Overview
 A collection of tools for various integrations and utilities.
 
-## New Features
-
-### Jira Integration
-- Search Jira issues
-- Read Jira issue details
-- Create new Jira issues
-
-### Confluence Integration
-- Search Confluence pages
-- Read Confluence page details
+## Available Tools
+- GitHub Repository Management
+- GitHub Issues Management
+- GitHub Pull Request Management
+- Jira Integration
+- Confluence Integration
 
 ## Installation
 
