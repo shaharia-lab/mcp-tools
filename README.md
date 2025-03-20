@@ -16,20 +16,27 @@ The tools adhere to the Model Context Protocol (MCP) specification to provide a 
 }
 ```
 
-[Here](https://modelcontextprotocol.io/docs/concepts/tools#tool-definition-structure) is the definition speicification for the MCP Tools.
+[Here](https://modelcontextprotocol.io/docs/concepts/tools#tool-definition-structure) is the definition specification for the MCP Tools.
 
 ## Available Tools
 
-| Tool   | Name                   | Description                                                                     | Use-cases                                                                   |
-|--------|------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| cURL   | `curl`                 | A versatile tool for making HTTP requests and interacting with APIs.            | Fetching data from APIs, web scraping, testing endpoints.                   |
-| git    | `git`                  | A tool for interacting with Git repositories.                                   | Managing code repositories, version control, collaboration.                 |
-| docker | `docker`               | A tool for managing Docker containers and images.                               | Building, running, and deploying applications in containers.                |
-| github | `github_issues`        | Manages GitHub issues - create, list, update, comment on issues.                | Managing GitHub issues. Required `GITHUB_TOKEN` environment variable        |
-| github | `github_pull_requests` | Manages GitHub pull requests - create, review, merge.                           | Managing GitHub pull requests. Required `GITHUB_TOKEN` environment variable |
-| github | `github_repository`    | Manages GitHub repositories - create, delete, update, fork.                     | Repository management. Required `GITHUB_TOKEN` environment variable         |
-| github | `github_search`        | Performs GitHub search operations across repositories, code, issues, and users. | Advanced GitHub searches. Required `GITHUB_TOKEN` environment variable      |
-| gmail  | `gmail`                | Gmail operation to execute (list, send, read, delete).                          | Managing Gmail operations                                                   |
+| Tool        | Name                   | Description                                                                     | Use-cases                                                                   |
+|-------------|------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| bash        | `bash`                 | Execute bash commands and shell scripts.                                        | System command execution, scripting, automation tasks.                      |
+| cat         | `cat`                  | Read and display file contents.                                                 | File inspection, quick content viewing.                                     |
+| cURL        | `curl`                 | A versatile tool for making HTTP requests and interacting with APIs.            | Fetching data from APIs, web scraping, testing endpoints.                   |
+| docker      | `docker`               | A tool for managing Docker containers and images.                               | Building, running, and deploying applications in containers.                |
+| file_system | `file_system`          | Perform filesystem operations like list, read, write, create, delete files.     | File management, directory manipulation, content manipulation.              |
+| git         | `git`                  | A tool for interacting with Git repositories.                                   | Managing code repositories, version control, collaboration.                 |
+| github      | `github_issues`        | Manages GitHub issues - create, list, update, comment on issues.                | Managing GitHub issues. Required `GITHUB_TOKEN` environment variable        |
+| github      | `github_pull_requests` | Manages GitHub pull requests - create, review, merge.                           | Managing GitHub pull requests. Required `GITHUB_TOKEN` environment variable |
+| github      | `github_repository`    | Manages GitHub repositories - create, delete, update, fork.                     | Repository management. Required `GITHUB_TOKEN` environment variable         |
+| github      | `github_search`        | Performs GitHub search operations across repositories, code, issues, and users. | Advanced GitHub searches. Required `GITHUB_TOKEN` environment variable      |
+| gmail       | `gmail`                | Gmail operation to execute (list, send, read, delete).                          | Managing Gmail operations                                                   |
+| grep        | `grep`                 | Search for text patterns in files or directories.                               | Text searching, log analysis, pattern matching.                             |
+| postgresql  | `postgresql`           | Interact with PostgreSQL databases.                                             | Database querying, data retrieval, database management.                     |
+| sed         | `sed`                  | Stream editor for filtering and transforming text.                              | Text manipulation, regex-based stream editing.                              |
+| weather     | `get_weather`          | Retrieve current weather information.                                           | Weather data retrieval, location-based weather queries.                     |
 
 ## Contributing
 Contributions to this open-source package are welcome! If you'd like to contribute, please start by reviewing
