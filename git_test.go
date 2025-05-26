@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -53,13 +53,13 @@ func TestGit_GitAllInOneTool(t *testing.T) {
 func TestGit_GitAllInOneTool_Handler(t *testing.T) {
 	tests := []struct {
 		name          string
-		input         mcp.CallToolParams
+		input         goai.CallToolParams
 		expectedError bool
 		setup         func(t *testing.T) (string, func())
 	}{
 		{
 			name: "Valid git status command",
-			input: mcp.CallToolParams{
+			input: goai.CallToolParams{
 				Name: GitToolName,
 				Arguments: json.RawMessage(`{
 					"command": "status",
@@ -112,7 +112,7 @@ func TestGit_GitAllInOneTool_Handler(t *testing.T) {
 		},
 		{
 			name: "Invalid JSON input",
-			input: mcp.CallToolParams{
+			input: goai.CallToolParams{
 				Name:      GitToolName,
 				Arguments: json.RawMessage(`{invalid json}`),
 			},

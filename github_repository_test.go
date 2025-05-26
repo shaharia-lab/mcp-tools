@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,7 +101,7 @@ func TestHandleRepositoryOperation_Create(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})
@@ -149,7 +149,7 @@ func TestHandleRepositoryOperation_Delete(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})
@@ -204,7 +204,7 @@ func TestHandleRepositoryOperation_Fork(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})
@@ -254,7 +254,7 @@ func TestHandleRepositoryOperation_ListBranches(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})
@@ -362,7 +362,7 @@ func TestHandleRepositoryOperation_CreateBranch(t *testing.T) {
 		t.Fatalf("Failed to marshal input: %v", err)
 	}
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})
@@ -445,7 +445,7 @@ func TestHandleRepositoryOperation_ProtectBranch(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleRepositoryOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleRepositoryOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubRepositoryToolName,
 		Arguments: inputBytes,
 	})

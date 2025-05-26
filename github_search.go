@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 // GetSearchTool returns a tool for GitHub search operations
-func (g *GitHub) GetSearchTool() mcp.Tool {
-	return mcp.Tool{
+func (g *GitHub) GetSearchTool() goai.Tool {
+	return goai.Tool{
 		Name:        GitHubSearchToolName,
 		Description: "Performs GitHub search operations across repositories, code, issues, and users",
 		InputSchema: json.RawMessage(`{
@@ -48,8 +47,8 @@ func (g *GitHub) GetSearchTool() mcp.Tool {
 	}
 }
 
-func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+func (g *GitHub) handleSearchOperation(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+	ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
 	var input struct {
@@ -66,7 +65,7 @@ func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolP
 	}).Info("Received input")
 
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
 
 	var result interface{}
@@ -120,8 +119,8 @@ func (g *GitHub) handleSearchOperation(ctx context.Context, params mcp.CallToolP
 		"result_length": len(m),
 	}).Info("GitHub search operation completed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "json",
 			Text: m,
 		}},

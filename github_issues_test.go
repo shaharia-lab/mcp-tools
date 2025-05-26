@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -130,7 +130,7 @@ func TestHandleIssuesOperation_Create(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleIssuesOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleIssuesOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubIssuesToolName,
 		Arguments: inputBytes,
 	})
@@ -185,7 +185,7 @@ func TestHandleIssuesOperation_Get(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleIssuesOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleIssuesOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubIssuesToolName,
 		Arguments: inputBytes,
 	})
@@ -243,7 +243,7 @@ func TestHandleIssuesOperation_List(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleIssuesOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleIssuesOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubIssuesToolName,
 		Arguments: inputBytes,
 	})
@@ -281,7 +281,7 @@ func TestHandleIssuesOperation_InvalidOperation(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	_, err = gh.handleIssuesOperation(context.Background(), mcp.CallToolParams{
+	_, err = gh.handleIssuesOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubIssuesToolName,
 		Arguments: inputBytes,
 	})
@@ -332,7 +332,7 @@ func TestHandleIssuesOperation_Close(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handleIssuesOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handleIssuesOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubIssuesToolName,
 		Arguments: inputBytes,
 	})

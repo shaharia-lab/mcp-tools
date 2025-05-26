@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 // GetPullRequestsTool returns a tool for managing GitHub pull requests
-func (g *GitHub) GetPullRequestsTool() mcp.Tool {
-	return mcp.Tool{
+func (g *GitHub) GetPullRequestsTool() goai.Tool {
+	return goai.Tool{
 		Name:        GitHubPullRequestsToolName,
 		Description: "Manages GitHub pull requests - create, review, merge",
 		InputSchema: json.RawMessage(`{
@@ -67,8 +66,8 @@ func (g *GitHub) GetPullRequestsTool() mcp.Tool {
 	}
 }
 
-func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+	ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
 	g.logger.WithFields(map[string]interface{}{
@@ -90,7 +89,7 @@ func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params mcp.Cal
 	}
 
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
 
 	var result interface{}
@@ -138,8 +137,8 @@ func (g *GitHub) handlePullRequestsOperation(ctx context.Context, params mcp.Cal
 		"result_length": len(m),
 	}).Info("GitHub pull request operation completed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "json",
 			Text: m,
 		}},

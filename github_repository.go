@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 // GetRepositoryTool returns a tool for managing GitHub repositories
-func (g *GitHub) GetRepositoryTool() mcp.Tool {
-	return mcp.Tool{
+func (g *GitHub) GetRepositoryTool() goai.Tool {
+	return goai.Tool{
 		Name:        GitHubRepositoryToolName,
 		Description: "Manages GitHub repositories - create, delete, update, fork",
 		InputSchema: json.RawMessage(`{
@@ -54,8 +53,8 @@ func (g *GitHub) GetRepositoryTool() mcp.Tool {
 	}
 }
 
-func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+func (g *GitHub) handleRepositoryOperation(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+	ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
 	var input struct {
@@ -74,7 +73,7 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 	}).Info("handling repository operation")
 
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
 
 	var result interface{}
@@ -105,7 +104,7 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 		// Get the source branch's SHA
 		ref, _, err := g.client.Git.GetRef(ctx, input.Owner, input.Repo, "refs/heads/"+input.SourceBranch)
 		if err != nil {
-			return mcp.CallToolResult{}, err
+			return goai.CallToolResult{}, err
 		}
 		result, _, _ = g.client.Git.CreateRef(ctx, input.Owner, input.Repo, &github.Reference{
 			Ref: github.String("refs/heads/" + input.Branch),
@@ -130,7 +129,7 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 	if err != nil {
 		g.logger.WithFields(map[string]interface{}{
 			"tool":                      params.Name,
-			observability.ErrorLogField: err,
+			goai.ErrorLogField: err,
 			"operation":                 input.Operation,
 		}).Error("GitHub repository operation failed")
 
@@ -144,8 +143,8 @@ func (g *GitHub) handleRepositoryOperation(ctx context.Context, params mcp.CallT
 		"result_length": len(m),
 	}).Info("GitHub repository operation completed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "json",
 			Text: m,
 		}},

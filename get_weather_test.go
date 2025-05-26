@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 )
 
 func TestGetWeather(t *testing.T) {
@@ -19,7 +19,7 @@ func TestGetWeather(t *testing.T) {
 	}
 
 	// Create the tool parameters
-	params := mcp.CallToolParams{
+	params := goai.CallToolParams{
 		Name:      "get_weather",
 		Arguments: inputBytes,
 	}

@@ -10,8 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -20,7 +19,7 @@ const CurlToolName = "curl"
 // Curl represents a wrapper around the system's curl command-line tool,
 // providing a programmatic interface for making HTTP requests.
 type Curl struct {
-	logger         observability.Logger
+	logger         goai.Logger
 	blockedMethods []string
 	cmdExecutor    CommandExecutor
 }
@@ -31,7 +30,7 @@ type CurlConfig struct {
 }
 
 // NewCurl creates and returns a new instance of the Curl wrapper with the provided configuration.
-func NewCurl(logger observability.Logger, config CurlConfig) *Curl {
+func NewCurl(logger goai.Logger, config CurlConfig) *Curl {
 	blockedMethods := make([]string, len(config.BlockedMethods))
 	for i, method := range config.BlockedMethods {
 		blockedMethods[i] = strings.ToUpper(method)
@@ -55,9 +54,9 @@ func (c *Curl) isMethodBlocked(method string) bool {
 	return false
 }
 
-// CurlAllInOneTool returns a mcp.Tool that can perform various HTTP requests
-func (c *Curl) CurlAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// CurlAllInOneTool returns a goai.Tool that can perform various HTTP requests
+func (c *Curl) CurlAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        CurlToolName,
 		Description: "Perform any HTTP request with specified method, URL, headers, and data",
 		InputSchema: json.RawMessage(`{
@@ -89,9 +88,9 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
         },
         "required": ["url", "method"]
     }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
 			// Start tracing span
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			defer span.End()
 
 			startTime := time.Now()
@@ -111,18 +110,18 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				c.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
 			// In your Handler function, add validation before command execution:
 			if err := validateInput(input); err != nil {
 				c.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
 				return returnErrorOutput(err), nil
@@ -144,7 +143,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			if err != nil {
 				c.logger.WithFields(map[string]interface{}{
 					"url":                       input.URL,
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 				}).Error("Invalid URL provided")
 
 				span.RecordError(err)
@@ -196,7 +195,7 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 			executionTime := time.Since(startTime)
 			if err != nil {
 				c.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"duration_ms":               executionTime.Milliseconds(),
 				}).Error("Curl command failed")
 				span.RecordError(err)
@@ -219,8 +218,8 @@ func (c *Curl) CurlAllInOneTool() mcp.Tool {
 				"output_length": len(output),
 			}).Info("Curl command executed successfully")
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{
 					{
 						Type: "text",
 						Text: string(output),

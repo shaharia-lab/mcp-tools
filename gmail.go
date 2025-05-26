@@ -9,8 +9,7 @@ import (
 
 	"google.golang.org/api/gmail/v1"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -21,7 +20,7 @@ const (
 // Gmail represents a wrapper around the Gmail API service,
 // providing a programmatic interface for executing Gmail operations.
 type Gmail struct {
-	logger  observability.Logger
+	logger  goai.Logger
 	service *gmail.Service
 	config  GmailConfig
 }
@@ -42,7 +41,7 @@ type GmailConfig struct {
 }
 
 // NewGmail creates and returns a new instance of the Gmail wrapper with the provided configuration.
-func NewGmail(logger observability.Logger, service *gmail.Service, config GmailConfig) *Gmail {
+func NewGmail(logger goai.Logger, service *gmail.Service, config GmailConfig) *Gmail {
 	return &Gmail{
 		logger:  logger,
 		service: service,
@@ -50,9 +49,9 @@ func NewGmail(logger observability.Logger, service *gmail.Service, config GmailC
 	}
 }
 
-// GmailAllInOneTool returns a mcp.Tool that can perform various Gmail operations
-func (g *Gmail) GmailAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// GmailAllInOneTool returns a goai.Tool that can perform various Gmail operations
+func (g *Gmail) GmailAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        GmailToolName,
 		Description: "Performs Gmail operations such as list, send, read messages",
 		InputSchema: json.RawMessage(`{
@@ -99,8 +98,8 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 			},
 			"required": ["operation"]
 		}`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			span.SetAttributes(
 				attribute.String("tool_name", params.Name),
 				attribute.String("tool_argument", string(params.Arguments)),
@@ -127,12 +126,12 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 			}
 
 			var result string
@@ -151,7 +150,7 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 
 			if err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"operation":                 input.Operation,
 				}).Error("Gmail operation failed")
 
@@ -165,8 +164,8 @@ func (g *Gmail) GmailAllInOneTool() mcp.Tool {
 				"result_length": len(result),
 			}).Debug("Gmail operation completed successfully")
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{{
 					Type: "text",
 					Text: result,
 				}},
@@ -214,7 +213,7 @@ func (g *Gmail) listMessages(ctx context.Context, query string, days int, maxRes
 			Do()
 		if err != nil {
 			g.logger.WithFields(map[string]interface{}{
-				observability.ErrorLogField: err,
+				goai.ErrorLogField: err,
 				"message_id":                msg.Id,
 			}).Error("Failed to fetch message details")
 			continue

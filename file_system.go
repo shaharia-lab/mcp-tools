@@ -9,8 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -18,7 +17,7 @@ const FileSystemToolName = "filesystem"
 
 // FileSystem represents a wrapper around filesystem operations
 type FileSystem struct {
-	logger observability.Logger
+	logger goai.Logger
 	config FileSystemConfig
 }
 
@@ -29,7 +28,7 @@ type FileSystemConfig struct {
 }
 
 // NewFileSystem creates a new instance of FileSystem
-func NewFileSystem(logger observability.Logger, config FileSystemConfig) *FileSystem {
+func NewFileSystem(logger goai.Logger, config FileSystemConfig) *FileSystem {
 	return &FileSystem{
 		logger: logger,
 		config: config,
@@ -37,8 +36,8 @@ func NewFileSystem(logger observability.Logger, config FileSystemConfig) *FileSy
 }
 
 // FileSystemAllInOneTool returns a Tool that performs filesystem operations
-func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+func (fs *FileSystem) FileSystemAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        FileSystemToolName,
 		Description: "Performs filesystem operations like list, read, write, create, delete files and directories",
 		InputSchema: json.RawMessage(`{
@@ -74,8 +73,8 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 			"required": ["operation", "path"]
 		}`),
 
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			span.SetAttributes(
 				attribute.String("tool_name", params.Name),
 				attribute.String("tool_argument", string(params.Arguments)),
@@ -97,7 +96,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				fs.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 
@@ -109,7 +108,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 			absPath, err := filepath.Abs(input.Path)
 			if err != nil {
 				fs.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"path":                      input.Path,
 				}).Error("Failed to resolve absolute path")
 
@@ -120,7 +119,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 			if !fs.isPathAllowed(absPath) {
 				err = fmt.Errorf("path outside allowed directory: %s", input.Path)
 				fs.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"path":                      input.Path,
 					"allowed_directory":         fs.config.AllowedDirectory,
 				}).Error("Access denied")
@@ -129,7 +128,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 				return returnErrorOutput(err), nil
 			}
 
-			var result mcp.CallToolResult
+			var result goai.CallToolResult
 			var opErr error
 
 			fs.logger.WithFields(map[string]interface{}{
@@ -161,7 +160,7 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 
 			if opErr != nil {
 				fs.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: opErr,
+					goai.ErrorLogField: opErr,
 					"operation":                 input.Operation,
 					"path":                      input.Path,
 					"tool":                      FileSystemToolName,
@@ -182,14 +181,14 @@ func (fs *FileSystem) FileSystemAllInOneTool() mcp.Tool {
 	}
 }
 
-func (fs *FileSystem) handleList(ctx context.Context, path string, recursive bool) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleList(ctx context.Context, path string, recursive bool) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to read directory: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to read directory: %w", err)
 	}
 
 	type fileInfo struct {
@@ -233,20 +232,20 @@ func (fs *FileSystem) handleList(ctx context.Context, path string, recursive boo
 
 	resultJSON, err := json.MarshalIndent(files, "", "  ")
 	if err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to marshal result: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to marshal result: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: string(resultJSON),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleTree(path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleTree(path string) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	var result strings.Builder
@@ -287,74 +286,74 @@ func (fs *FileSystem) handleTree(path string) (mcp.CallToolResult, error) {
 	}
 
 	if err := walk(path, "", 0); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to generate tree: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to generate tree: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: result.String(),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleRead(path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleRead(path string) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to read file: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: string(content),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleWrite(path string, content string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleWrite(path string, content string) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to write file: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to write file: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), path),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleCreate(path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleCreate(path string) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to create file: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: fmt.Sprintf("Successfully created file: %s", path),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleDelete(path string, recursive bool) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleDelete(path string, recursive bool) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	var err error
@@ -367,7 +366,7 @@ func (fs *FileSystem) handleDelete(path string, recursive bool) (mcp.CallToolRes
 			return fs.validatePath(subPath)
 		})
 		if err != nil {
-			return mcp.CallToolResult{}, fmt.Errorf("validation failed for recursive delete: %w", err)
+			return goai.CallToolResult{}, fmt.Errorf("validation failed for recursive delete: %w", err)
 		}
 		err = os.RemoveAll(path)
 	} else {
@@ -375,28 +374,28 @@ func (fs *FileSystem) handleDelete(path string, recursive bool) (mcp.CallToolRes
 	}
 
 	if err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to delete: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to delete: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: fmt.Sprintf("Successfully deleted: %s", path),
 		}},
 	}, nil
 }
 
-func (fs *FileSystem) handleMkdir(path string) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleMkdir(path string) (goai.CallToolResult, error) {
 	if err := fs.validatePath(path); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to create directory: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to create directory: %w", err)
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: fmt.Sprintf("Successfully created directory: %s", path),
 		}},
@@ -412,7 +411,7 @@ func (fs *FileSystem) isPathAllowed(path string) bool {
 	allowedAbs, err := filepath.Abs(fs.config.AllowedDirectory)
 	if err != nil {
 		fs.logger.WithFields(map[string]interface{}{
-			observability.ErrorLogField: err,
+			goai.ErrorLogField: err,
 			"allowed_directory":         fs.config.AllowedDirectory,
 		}).Error("Failed to resolve allowed directory path")
 		return false
@@ -439,7 +438,7 @@ func (fs *FileSystem) isPathBlocked(path string) bool {
 		matched, err := filepath.Match(pattern, filepath.Base(path))
 		if err != nil {
 			fs.logger.WithFields(map[string]interface{}{
-				observability.ErrorLogField: err,
+				goai.ErrorLogField: err,
 				"pattern":                   pattern,
 				"path":                      path,
 			}).Error("Failed to match pattern")
@@ -463,9 +462,9 @@ func (fs *FileSystem) validatePath(path string) error {
 	return nil
 }
 
-func (fs *FileSystem) handleSearch(root string, pattern string, searchContent string, recursive bool) (mcp.CallToolResult, error) {
+func (fs *FileSystem) handleSearch(root string, pattern string, searchContent string, recursive bool) (goai.CallToolResult, error) {
 	if err := fs.validatePath(root); err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	var matches []string
@@ -502,7 +501,7 @@ func (fs *FileSystem) handleSearch(root string, pattern string, searchContent st
 			data, err := os.ReadFile(path)
 			if err != nil {
 				fs.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"path":                      path,
 				}).Error("Failed to read file for content search")
 				return nil // Skip files we can't read
@@ -525,17 +524,17 @@ func (fs *FileSystem) handleSearch(root string, pattern string, searchContent st
 	err := filepath.Walk(root, walkFn)
 	if err != nil {
 		fs.logger.WithFields(map[string]interface{}{
-			observability.ErrorLogField: err,
+			goai.ErrorLogField: err,
 			"root":                      root,
 			"pattern":                   pattern,
 			"content":                   searchContent,
 		}).Error("Failed to search files")
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 
 	if len(matches) == 0 {
-		return mcp.CallToolResult{
-			Content: []mcp.ToolResultContent{
+		return goai.CallToolResult{
+			Content: []goai.ToolResultContent{
 				{
 					Type: "text",
 					Text: "No matches found",
@@ -544,8 +543,8 @@ func (fs *FileSystem) handleSearch(root string, pattern string, searchContent st
 		}, nil
 	}
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{
 			{
 				Type: "text",
 				Text: strings.Join(matches, "\n"),

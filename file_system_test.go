@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestFileSystem_List(t *testing.T) {
 		name      string
 		input     map[string]interface{}
 		wantErr   bool
-		checkFunc func(t *testing.T, result mcp.CallToolResult)
+		checkFunc func(t *testing.T, result goai.CallToolResult)
 	}{
 		{
 			name: "list directory success",
@@ -50,7 +50,7 @@ func TestFileSystem_List(t *testing.T) {
 				"recursive": false,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "test.txt")
 			},
 		},
@@ -77,7 +77,7 @@ func TestFileSystem_List(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -122,7 +122,7 @@ func TestFileSystem_Read(t *testing.T) {
 		name      string
 		input     map[string]interface{}
 		wantErr   bool
-		checkFunc func(t *testing.T, result mcp.CallToolResult)
+		checkFunc func(t *testing.T, result goai.CallToolResult)
 	}{
 		{
 			name: "read file success",
@@ -131,7 +131,7 @@ func TestFileSystem_Read(t *testing.T) {
 				"path":      testFile,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Equal(t, "test content", result.Content[0].Text)
 			},
 		},
@@ -150,7 +150,7 @@ func TestFileSystem_Read(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -224,7 +224,7 @@ func TestFileSystem_Write(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -319,7 +319,7 @@ func TestFileSystem_Delete(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -366,7 +366,7 @@ func TestFileSystem_Tree(t *testing.T) {
 		name      string
 		input     map[string]interface{}
 		wantErr   bool
-		checkFunc func(t *testing.T, result mcp.CallToolResult)
+		checkFunc func(t *testing.T, result goai.CallToolResult)
 	}{
 		{
 			name: "tree directory success",
@@ -375,7 +375,7 @@ func TestFileSystem_Tree(t *testing.T) {
 				"path":      tempDir,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "dir1")
 				assert.Contains(t, result.Content[0].Text, "subdir")
 				assert.Contains(t, result.Content[0].Text, "file1.txt")
@@ -389,7 +389,7 @@ func TestFileSystem_Tree(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -466,7 +466,7 @@ func TestFileSystem_Mkdir(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			_, err = fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})
@@ -522,7 +522,7 @@ func TestFileSystem_Search(t *testing.T) {
 		name      string
 		input     map[string]interface{}
 		wantErr   bool
-		checkFunc func(t *testing.T, result mcp.CallToolResult)
+		checkFunc func(t *testing.T, result goai.CallToolResult)
 	}{
 		{
 			name: "search by file pattern",
@@ -533,7 +533,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"recursive": true,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "file1.txt")
 				assert.Contains(t, result.Content[0].Text, "file3.txt")
 				assert.NotContains(t, result.Content[0].Text, "file2.go")
@@ -548,7 +548,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"recursive": true,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "file2.go")
 				assert.NotContains(t, result.Content[0].Text, "file4.go")
 			},
@@ -563,7 +563,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"recursive": true,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "file4.go")
 				assert.NotContains(t, result.Content[0].Text, "file2.go")
 			},
@@ -577,7 +577,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"recursive": false,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Contains(t, result.Content[0].Text, "file1.txt")
 				assert.NotContains(t, result.Content[0].Text, "file3.txt")
 			},
@@ -591,7 +591,7 @@ func TestFileSystem_Search(t *testing.T) {
 				"recursive": true,
 			},
 			wantErr: false,
-			checkFunc: func(t *testing.T, result mcp.CallToolResult) {
+			checkFunc: func(t *testing.T, result goai.CallToolResult) {
 				assert.Equal(t, "No matches found", result.Content[0].Text)
 			},
 		},
@@ -611,7 +611,7 @@ func TestFileSystem_Search(t *testing.T) {
 			args, err := json.Marshal(tt.input)
 			require.NoError(t, err)
 
-			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), mcp.CallToolParams{
+			result, err := fs.FileSystemAllInOneTool().Handler(context.Background(), goai.CallToolParams{
 				Name:      FileSystemToolName,
 				Arguments: args,
 			})

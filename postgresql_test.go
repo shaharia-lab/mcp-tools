@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -71,7 +71,7 @@ func TestPostgreSQL_Query(t *testing.T) {
 
 	result, err := pg.PostgreSQLAllInOneTool().Handler(
 		context.Background(),
-		mcp.CallToolParams{
+		goai.CallToolParams{
 			Name:      PostgreSQLToolName,
 			Arguments: inputJSON,
 		},
@@ -111,7 +111,7 @@ func TestPostgreSQL_InvalidOperation(t *testing.T) {
 
 	result, err := pg.PostgreSQLAllInOneTool().Handler(
 		context.Background(),
-		mcp.CallToolParams{
+		goai.CallToolParams{
 			Name:      PostgreSQLToolName,
 			Arguments: inputJSON,
 		},
@@ -161,7 +161,7 @@ func TestPostgreSQL_ListDatabases(t *testing.T) {
 
 	result, err := pg.PostgreSQLAllInOneTool().Handler(
 		context.Background(),
-		mcp.CallToolParams{
+		goai.CallToolParams{
 			Name:      PostgreSQLToolName,
 			Arguments: inputJSON,
 		},

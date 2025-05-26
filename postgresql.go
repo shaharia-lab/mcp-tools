@@ -10,8 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -20,7 +19,7 @@ const PostgreSQLToolName = "postgresql"
 
 // PostgreSQL represents a tool for performing PostgreSQL operations
 type PostgreSQL struct {
-	logger   observability.Logger
+	logger   goai.Logger
 	config   PostgreSQLConfig
 	connPool map[string]*sql.DB
 	mu       sync.RWMutex
@@ -43,7 +42,7 @@ type DBConnection struct {
 }
 
 // NewPostgreSQL creates a new PostgreSQL tool with the given logger and configuration
-func NewPostgreSQL(logger observability.Logger, config PostgreSQLConfig) *PostgreSQL {
+func NewPostgreSQL(logger goai.Logger, config PostgreSQLConfig) *PostgreSQL {
 	pg := &PostgreSQL{
 		logger:   logger,
 		config:   config,
@@ -54,8 +53,8 @@ func NewPostgreSQL(logger observability.Logger, config PostgreSQLConfig) *Postgr
 }
 
 // PostgreSQLAllInOneTool remains mostly the same, but uses getConnection instead
-func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+func (p *PostgreSQL) PostgreSQLAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        PostgreSQLToolName,
 		Description: "Performs PostgreSQL operations including querying, explaining queries, and retrieving schema information",
 		InputSchema: json.RawMessage(`{
@@ -81,8 +80,8 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
             },
             "required": ["operation"]
         }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			span.SetAttributes(
 				attribute.String("tool_name", params.Name),
 				attribute.String("tool_argument", string(params.Arguments)),
@@ -103,11 +102,11 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				p.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 			}
 
 			// Handle list_databases operation first as it doesn't need a connection
@@ -130,13 +129,13 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 			switch input.Operation {
 			case "query":
 				if input.Query == "" {
-					return mcp.CallToolResult{}, fmt.Errorf("query is required for operation 'query'")
+					return goai.CallToolResult{}, fmt.Errorf("query is required for operation 'query'")
 				}
 				return p.executeQuery(ctx, db, input.Query)
 
 			case "explain":
 				if input.Query == "" {
-					return mcp.CallToolResult{}, fmt.Errorf("query is required for operation 'explain'")
+					return goai.CallToolResult{}, fmt.Errorf("query is required for operation 'explain'")
 				}
 				return p.executeExplain(ctx, db, input.Query)
 
@@ -150,13 +149,13 @@ func (p *PostgreSQL) PostgreSQLAllInOneTool() mcp.Tool {
 				p.logger.WithFields(map[string]interface{}{
 					"operation": input.Operation,
 				}).Error("Invalid operation")
-				return mcp.CallToolResult{}, fmt.Errorf("unknown operation: %s", input.Operation)
+				return goai.CallToolResult{}, fmt.Errorf("unknown operation: %s", input.Operation)
 			}
 		},
 	}
 }
 
-func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string) (mcp.CallToolResult, error) {
+func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string) (goai.CallToolResult, error) {
 	p.logger.WithFields(map[string]interface{}{
 		"tool":      PostgreSQLToolName,
 		"operation": "executeQuery",
@@ -165,7 +164,7 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
-		return mcp.CallToolResult{}, err
+		return goai.CallToolResult{}, err
 	}
 	defer rows.Close()
 
@@ -202,15 +201,15 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 		"query":     query,
 	}).Info("Query executed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: result.String(),
 		}},
 	}, nil
 }
 
-func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query string) (mcp.CallToolResult, error) {
+func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query string) (goai.CallToolResult, error) {
 	p.logger.WithFields(map[string]interface{}{
 		"tool":      PostgreSQLToolName,
 		"operation": "executeExplain",
@@ -220,7 +219,7 @@ func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query strin
 	rows, err := db.QueryContext(ctx, "EXPLAIN ANALYZE "+query)
 	if err != nil {
 		p.logger.WithFields(map[string]interface{}{
-			observability.ErrorLogField: err,
+			goai.ErrorLogField: err,
 			"query":                     query,
 		}).Error("Failed to execute explain query")
 
@@ -243,15 +242,15 @@ func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query strin
 		"query":     query,
 	}).Info("Explain executed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: explain.String(),
 		}},
 	}, nil
 }
 
-func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName string) (mcp.CallToolResult, error) {
+func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName string) (goai.CallToolResult, error) {
 	p.logger.WithFields(map[string]interface{}{
 		"tool":      PostgreSQLToolName,
 		"operation": "getTableSchema",
@@ -301,8 +300,8 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 		"table":     tableName,
 	}).Info("Table schema retrieved successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: schema.String(),
 		}},
@@ -310,7 +309,7 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 }
 
 // New helper method to list available databases
-func (p *PostgreSQL) listAvailableDatabases() mcp.CallToolResult {
+func (p *PostgreSQL) listAvailableDatabases() goai.CallToolResult {
 	p.logger.WithFields(map[string]interface{}{
 		"tool":      PostgreSQLToolName,
 		"operation": "listAvailableDatabases",
@@ -330,8 +329,8 @@ func (p *PostgreSQL) listAvailableDatabases() mcp.CallToolResult {
 		"databases": databases,
 	}).Info("Databases listed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "text",
 			Text: fmt.Sprintf("Available databases:\n%s", strings.Join(databases, "\n")),
 		}},
@@ -377,7 +376,7 @@ func (p *PostgreSQL) initializeConnections() error {
 			if err := p.initializeConnection(dbName, connConfig); err != nil {
 				lastError = err
 				p.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"database":                  dbName,
 				}).Error("Failed to initialize database connection")
 			}

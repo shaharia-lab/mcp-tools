@@ -7,29 +7,28 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 const CatToolName = "cat"
 
 // Cat represents a wrapper around the system's cat command-line tool
 type Cat struct {
-	logger      observability.Logger
+	logger      goai.Logger
 	cmdExecutor CommandExecutor
 }
 
 // NewCat creates a new instance of the Cat wrapper
-func NewCat(logger observability.Logger) *Cat {
+func NewCat(logger goai.Logger) *Cat {
 	return &Cat{
 		logger:      logger,
 		cmdExecutor: &RealCommandExecutor{},
 	}
 }
 
-// CatAllInOneTool returns a mcp.Tool that can execute cat commands
-func (c *Cat) CatAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// CatAllInOneTool returns a goai.Tool that can execute cat commands
+func (c *Cat) CatAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        CatToolName,
 		Description: "Display contents of files",
 		InputSchema: json.RawMessage(`{
@@ -52,7 +51,7 @@ func (c *Cat) CatAllInOneTool() mcp.Tool {
             },
             "required": ["files"]
         }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
 			var input struct {
 				Files   []string `json:"files"`
 				Options []string `json:"options"`
@@ -60,7 +59,7 @@ func (c *Cat) CatAllInOneTool() mcp.Tool {
 
 			c.logger.WithFields(map[string]interface{}{"tool": CatToolName}).Info("Received input", "input", string(params.Arguments))
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
-				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
 			if len(input.Files) == 0 {
@@ -82,8 +81,8 @@ func (c *Cat) CatAllInOneTool() mcp.Tool {
 
 			o := string(output)
 			c.logger.WithFields(map[string]interface{}{"tool": CatToolName, "output_length": len(o)}).Info("Successfully executed cat command")
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{Type: "text", Text: o}},
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{{Type: "text", Text: o}},
 				IsError: false,
 			}, nil
 		},
