@@ -6,31 +6,30 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 const DockerToolName = "docker"
 
 // Docker represents a wrapper around the system's docker command-line tool
 type Docker struct {
-	logger      observability.Logger
+	logger      goai.Logger
 	cmdExecutor CommandExecutor
 }
 
 // Rest of your existing struct definitions...
 
 // NewDocker creates and returns a new instance of the Docker wrapper
-func NewDocker(logger observability.Logger) *Docker {
+func NewDocker(logger goai.Logger) *Docker {
 	return &Docker{
 		logger:      logger,
 		cmdExecutor: &RealCommandExecutor{},
 	}
 }
 
-// DockerAllInOneTool returns a mcp.Tool that can execute Docker commands
-func (d *Docker) DockerAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// DockerAllInOneTool returns a goai.Tool that can execute Docker commands
+func (d *Docker) DockerAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        DockerToolName,
 		Description: "Execute Docker commands with specified arguments",
 		InputSchema: json.RawMessage(`{
@@ -50,8 +49,8 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
             },
             "required": ["command"]
         }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			defer span.End()
 
 			var input struct {
@@ -65,16 +64,16 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				d.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
 			if err := validateDockerInput(input); err != nil {
 				d.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
 				return returnErrorOutput(err), nil
@@ -92,7 +91,7 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 			output, err := d.cmdExecutor.ExecuteCommand(ctx, cmd)
 			if err != nil {
 				d.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"command":                   "docker",
 					"args":                      args,
 				}).Error("Docker command execution failed")
@@ -104,8 +103,8 @@ func (d *Docker) DockerAllInOneTool() mcp.Tool {
 				"tool": DockerToolName,
 			}).Info("Docker command executed successfully", "command", input.Command, "args", input.Args)
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{
 					{
 						Type: "text",
 						Text: string(output),

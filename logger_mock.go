@@ -3,11 +3,11 @@ package mcptools
 import (
 	"context"
 
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockLogger is a mock implementation of observability.Logger
+// MockLogger is a mock implementation of goai.Logger
 type MockLogger struct {
 	mock.Mock
 }
@@ -55,19 +55,19 @@ func (m *MockLogger) Panic(args ...interface{}) { m.Called(args) }
 // Context methods
 
 // WithFields adds fields to the logger and returns a new logger instance.
-func (m *MockLogger) WithFields(fields map[string]interface{}) observability.Logger {
+func (m *MockLogger) WithFields(fields map[string]interface{}) goai.Logger {
 	args := m.Called(fields)
-	return args.Get(0).(observability.Logger)
+	return args.Get(0).(goai.Logger)
 }
 
 // WithContext adds a context to the logger and returns a new logger instance.
-func (m *MockLogger) WithContext(ctx context.Context) observability.Logger {
+func (m *MockLogger) WithContext(ctx context.Context) goai.Logger {
 	args := m.Called(ctx)
-	return args.Get(0).(observability.Logger)
+	return args.Get(0).(goai.Logger)
 }
 
 // WithErr adds an error to the logger and returns a new logger instance.
-func (m *MockLogger) WithErr(err error) observability.Logger {
+func (m *MockLogger) WithErr(err error) goai.Logger {
 	args := m.Called(err)
-	return args.Get(0).(observability.Logger)
+	return args.Get(0).(goai.Logger)
 }

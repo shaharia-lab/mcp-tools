@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -109,7 +109,7 @@ func TestHandlePullRequestsOperation_Create(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handlePullRequestsOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handlePullRequestsOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubPullRequestsToolName,
 		Arguments: inputBytes,
 	})
@@ -165,7 +165,7 @@ func TestHandlePullRequestsOperation_Get(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handlePullRequestsOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handlePullRequestsOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubPullRequestsToolName,
 		Arguments: inputBytes,
 	})
@@ -230,7 +230,7 @@ func TestHandlePullRequestsOperation_Review(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handlePullRequestsOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handlePullRequestsOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubPullRequestsToolName,
 		Arguments: inputBytes,
 	})
@@ -286,7 +286,7 @@ func TestHandlePullRequestsOperation_Merge(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handlePullRequestsOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handlePullRequestsOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubPullRequestsToolName,
 		Arguments: inputBytes,
 	})
@@ -346,7 +346,7 @@ func TestHandlePullRequestsOperation_ListFiles(t *testing.T) {
 	inputBytes, err := json.Marshal(input)
 	require.NoError(t, err)
 
-	result, err := gh.handlePullRequestsOperation(context.Background(), mcp.CallToolParams{
+	result, err := gh.handlePullRequestsOperation(context.Background(), goai.CallToolParams{
 		Name:      GitHubPullRequestsToolName,
 		Arguments: inputBytes,
 	})

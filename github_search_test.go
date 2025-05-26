@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
 )
 
 func TestHandleSearchOperation(t *testing.T) {
@@ -162,7 +162,7 @@ func TestHandleSearchOperation(t *testing.T) {
 				t.Fatalf("Failed to marshal input: %v", err)
 			}
 
-			result, err := gh.handleSearchOperation(context.Background(), mcp.CallToolParams{
+			result, err := gh.handleSearchOperation(context.Background(), goai.CallToolParams{
 				Name:      GitHubSearchToolName,
 				Arguments: inputBytes,
 			})

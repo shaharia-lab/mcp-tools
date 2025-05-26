@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -148,14 +148,14 @@ func TestCurl_CurlAllInOneTool(t *testing.T) {
 	inputJSON, _ := json.Marshal(validInput)
 
 	ctx := context.Background()
-	result, err := tool.Handler(ctx, mcp.CallToolParams{
+	result, err := tool.Handler(ctx, goai.CallToolParams{
 		Name:      CurlToolName,
 		Arguments: inputJSON,
 	})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, []mcp.ToolResultContent{
+	assert.Equal(t, []goai.ToolResultContent{
 		{Type: "text", Text: "mock response"},
 	}, result.Content)
 

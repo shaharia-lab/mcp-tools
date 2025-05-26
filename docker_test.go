@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/shaharia-lab/goai/mcp"
+	"github.com/shaharia-lab/goai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -88,14 +88,14 @@ func TestDocker_DockerAllInOneTool(t *testing.T) {
 	}
 	inputJSON, _ := json.Marshal(validInput)
 
-	result, err := tool.Handler(context.Background(), mcp.CallToolParams{
+	result, err := tool.Handler(context.Background(), goai.CallToolParams{
 		Name:      DockerToolName,
 		Arguments: inputJSON,
 	})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, []mcp.ToolResultContent{
+	assert.Equal(t, []goai.ToolResultContent{
 		{Type: "text", Text: "mock docker output"},
 	}, result.Content)
 

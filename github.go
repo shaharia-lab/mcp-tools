@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"golang.org/x/oauth2"
 )
 
@@ -19,7 +19,7 @@ const (
 // GitHub represents a wrapper around GitHub API client
 type GitHub struct {
 	client *github.Client
-	logger observability.Logger
+	logger goai.Logger
 	config GitHubConfig
 }
 
@@ -28,7 +28,7 @@ type GitHubConfig struct {
 }
 
 // NewGitHubTool to perform operations on GitHub
-func NewGitHubTool(logger observability.Logger, config GitHubConfig) *GitHub {
+func NewGitHubTool(logger goai.Logger, config GitHubConfig) *GitHub {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: config.Token},

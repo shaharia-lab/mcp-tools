@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v60/github"
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 // GetIssuesTool returns a tool for managing GitHub issues
-func (g *GitHub) GetIssuesTool() mcp.Tool {
-	return mcp.Tool{
+func (g *GitHub) GetIssuesTool() goai.Tool {
+	return goai.Tool{
 		Name:        GitHubIssuesToolName,
 		Description: "Manages GitHub issues - create, list, update, comment",
 		InputSchema: json.RawMessage(`{
@@ -60,8 +59,8 @@ func (g *GitHub) GetIssuesTool() mcp.Tool {
 	}
 }
 
-func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-	ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+func (g *GitHub) handleIssuesOperation(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+	ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 	defer span.End()
 
 	g.logger.WithFields(map[string]interface{}{
@@ -81,7 +80,7 @@ func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolP
 	}
 
 	if err := json.Unmarshal(params.Arguments, &input); err != nil {
-		return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+		return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 	}
 
 	var result interface{}
@@ -122,7 +121,7 @@ func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolP
 	if err != nil {
 		g.logger.WithFields(map[string]interface{}{
 			"tool":                      params.Name,
-			observability.ErrorLogField: err,
+			goai.ErrorLogField: err,
 			"operation":                 input.Operation,
 		}).Error("GitHub issues operation failed")
 
@@ -137,8 +136,8 @@ func (g *GitHub) handleIssuesOperation(ctx context.Context, params mcp.CallToolP
 		"result_length": len(marshalledResult),
 	}).Info("GitHub issues operation completed successfully")
 
-	return mcp.CallToolResult{
-		Content: []mcp.ToolResultContent{{
+	return goai.CallToolResult{
+		Content: []goai.ToolResultContent{{
 			Type: "json",
 			Text: marshalledResult,
 		}},

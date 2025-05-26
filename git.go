@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -16,7 +15,7 @@ const GitToolName = "git"
 // Git represents a wrapper around the system's git command-line tool,
 // providing a programmatic interface for executing git commands.
 type Git struct {
-	logger observability.Logger
+	logger goai.Logger
 	config GitConfig
 }
 
@@ -29,16 +28,16 @@ type GitConfig struct {
 }
 
 // NewGit creates and returns a new instance of the Git wrapper with the provided configuration.
-func NewGit(logger observability.Logger, config GitConfig) *Git {
+func NewGit(logger goai.Logger, config GitConfig) *Git {
 	return &Git{
 		logger: logger,
 		config: config,
 	}
 }
 
-// GitAllInOneTool returns a mcp.Tool that can perform various Git operations
-func (g *Git) GitAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// GitAllInOneTool returns a goai.Tool that can perform various Git operations
+func (g *Git) GitAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        GitToolName,
 		Description: "Performs any Git operation based on the provided command",
 		InputSchema: json.RawMessage(`{
@@ -62,8 +61,8 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 			},
 			"required": ["command", "repo_path"]
 		}`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			span.SetAttributes(
 				attribute.String("tool_name", params.Name),
 				attribute.String("tool_argument", string(params.Arguments)),
@@ -83,13 +82,13 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"tool":                      GitToolName,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to unmarshal input: %w", err)
 			}
 
 			args := append([]string{"-C", input.RepoPath, input.Command}, input.Args...)
@@ -111,7 +110,7 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"output":                    string(output),
 					"command":                   input.Command,
 				}).Error("Git command failed")
@@ -126,8 +125,8 @@ func (g *Git) GitAllInOneTool() mcp.Tool {
 				"output":  string(output),
 			}).Debug("Git command completed successfully")
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{{
 					Type: "text",
 					Text: string(output),
 				}},

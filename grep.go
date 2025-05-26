@@ -7,29 +7,28 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 const GrepToolName = "grep"
 
 // Grep represents a wrapper around the system's grep command-line tool
 type Grep struct {
-	logger      observability.Logger
+	logger      goai.Logger
 	cmdExecutor CommandExecutor
 }
 
 // NewGrep creates and returns a new instance of the Grep wrapper
-func NewGrep(logger observability.Logger) *Grep {
+func NewGrep(logger goai.Logger) *Grep {
 	return &Grep{
 		logger:      logger,
 		cmdExecutor: &RealCommandExecutor{},
 	}
 }
 
-// GrepAllInOneTool returns a mcp.Tool that can execute grep commands
-func (g *Grep) GrepAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// GrepAllInOneTool returns a goai.Tool that can execute grep commands
+func (g *Grep) GrepAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        GrepToolName,
 		Description: "Execute grep commands with specified pattern and options",
 		InputSchema: json.RawMessage(`{
@@ -53,8 +52,8 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
             },
             "required": ["pattern", "path"]
         }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
-			ctx, span := observability.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
+			ctx, span := goai.StartSpan(ctx, fmt.Sprintf("%s.Handler", params.Name))
 			defer span.End()
 
 			var input struct {
@@ -70,16 +69,16 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 
 			if err := json.Unmarshal(params.Arguments, &input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"raw_input":                 string(params.Arguments),
 				}).Error("Failed to unmarshal input parameters")
 				span.RecordError(err)
-				return mcp.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
+				return goai.CallToolResult{}, fmt.Errorf("failed to parse input: %w", err)
 			}
 
 			if err := validateGrepInput(input); err != nil {
 				g.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 				}).Error("Input validation failed")
 				span.RecordError(err)
 				return returnErrorOutput(err), nil
@@ -117,8 +116,8 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 				if errors.As(err, &exitError) {
 					// Exit code 1 means no matches found (not an error)
 					if exitError.ExitCode() == 1 {
-						return mcp.CallToolResult{
-							Content: []mcp.ToolResultContent{
+						return goai.CallToolResult{
+							Content: []goai.ToolResultContent{
 								{
 									Type: "text",
 									Text: "No matches found",
@@ -134,15 +133,15 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 					}
 
 					g.logger.WithFields(map[string]interface{}{
-						observability.ErrorLogField: err,
+						goai.ErrorLogField: err,
 						"command":                   "grep",
 						"args":                      args,
 						"exit_code":                 exitError.ExitCode(),
 						"stderr":                    errorMsg,
 					}).Error("Grep command execution failed")
 
-					return mcp.CallToolResult{
-						Content: []mcp.ToolResultContent{
+					return goai.CallToolResult{
+						Content: []goai.ToolResultContent{
 							{
 								Type: "text",
 								Text: fmt.Sprintf("Grep command failed (exit code %d): %s\nCommand: grep %v",
@@ -153,8 +152,8 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 					}, nil
 				}
 				// Handle non-exit errors
-				return mcp.CallToolResult{
-					Content: []mcp.ToolResultContent{
+				return goai.CallToolResult{
+					Content: []goai.ToolResultContent{
 						{
 							Type: "text",
 							Text: fmt.Sprintf("Command execution error: %s", err.Error()),
@@ -169,8 +168,8 @@ func (g *Grep) GrepAllInOneTool() mcp.Tool {
 				"output_lenght": len(string(output)),
 			}).Info("Grep command executed successfully")
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{
 					{
 						Type: "text",
 						Text: string(output),

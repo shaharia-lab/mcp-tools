@@ -7,30 +7,28 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/shaharia-lab/goai/mcp"
-	"github.com/shaharia-lab/goai/observability"
+	"github.com/shaharia-lab/goai"
 )
 
 const SedToolName = "sed"
 
 // Sed represents a wrapper around the system's sed command-line tool
 type Sed struct {
-	logger      observability.Logger
+	logger      goai.Logger
 	cmdExecutor CommandExecutor
 }
 
 // NewSed creates a new instance of the Sed wrapper
-func NewSed(logger observability.Logger) *Sed {
+func NewSed(logger goai.Logger) *Sed {
 	return &Sed{
 		logger:      logger,
 		cmdExecutor: &RealCommandExecutor{},
 	}
 }
 
-// SedAllInOneTool returns a mcp.Tool that can execute sed commands
-// SedAllInOneTool returns a mcp.Tool that can execute sed commands
-func (s *Sed) SedAllInOneTool() mcp.Tool {
-	return mcp.Tool{
+// SedAllInOneTool returns a goai.Tool that can execute sed commands
+func (s *Sed) SedAllInOneTool() goai.Tool {
+	return goai.Tool{
 		Name:        SedToolName,
 		Description: "Stream editor for filtering and transforming text",
 		InputSchema: json.RawMessage(`{
@@ -57,7 +55,7 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
             },
             "required": ["expression"]
         }`),
-		Handler: func(ctx context.Context, params mcp.CallToolParams) (mcp.CallToolResult, error) {
+		Handler: func(ctx context.Context, params goai.CallToolParams) (goai.CallToolResult, error) {
 			var input struct {
 				Expression string   `json:"expression"`
 				Files      []string `json:"files"`
@@ -91,7 +89,7 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 					}
 
 					s.logger.WithFields(map[string]interface{}{
-						observability.ErrorLogField: err,
+						goai.ErrorLogField: err,
 						"command":                   "sed",
 						"args":                      args,
 						"exit_code":                 exitError.ExitCode(),
@@ -102,7 +100,7 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 				}
 
 				s.logger.WithFields(map[string]interface{}{
-					observability.ErrorLogField: err,
+					goai.ErrorLogField: err,
 					"command":                   "sed",
 					"args":                      args,
 				}).Error("Sed command execution failed")
@@ -115,8 +113,8 @@ func (s *Sed) SedAllInOneTool() mcp.Tool {
 				"args":    args,
 			}).Info("Sed command executed successfully")
 
-			return mcp.CallToolResult{
-				Content: []mcp.ToolResultContent{{Type: "text", Text: string(output)}},
+			return goai.CallToolResult{
+				Content: []goai.ToolResultContent{{Type: "text", Text: string(output)}},
 				IsError: false,
 			}, nil
 		},
