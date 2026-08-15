@@ -166,7 +166,7 @@ func (p *PostgreSQL) executeQuery(ctx context.Context, db *sql.DB, query string)
 	if err != nil {
 		return goai.CallToolResult{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	columns, err := rows.Columns()
 	if err != nil {
@@ -225,7 +225,7 @@ func (p *PostgreSQL) executeExplain(ctx context.Context, db *sql.DB, query strin
 
 		return returnErrorOutput(err), nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var explain strings.Builder
 	for rows.Next() {
@@ -269,10 +269,10 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 	if err != nil {
 		return returnErrorOutput(err), nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var schema strings.Builder
-	schema.WriteString(fmt.Sprintf("Table: %s\n\n", tableName))
+	fmt.Fprintf(&schema, "Table: %s\n\n", tableName)
 	schema.WriteString("Column Name | Data Type | Length | Nullable | Default\n")
 	schema.WriteString("------------|-----------|---------|----------|----------\n")
 
@@ -286,12 +286,12 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 			return returnErrorOutput(err), nil
 		}
 
-		schema.WriteString(fmt.Sprintf("%s | %s | %v | %s | %s\n",
+		fmt.Fprintf(&schema, "%s | %s | %v | %s | %s\n",
 			columnName,
 			dataType,
 			maxLength.Int64,
 			isNullable,
-			defaultValue.String))
+			defaultValue.String)
 	}
 
 	p.logger.WithFields(map[string]interface{}{
@@ -403,7 +403,7 @@ func (p *PostgreSQL) initializeConnection(dbName string, config DBConnection) er
 
 	// Test the connection
 	if err := db.Ping(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 

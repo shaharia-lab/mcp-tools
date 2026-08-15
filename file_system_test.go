@@ -25,7 +25,7 @@ func TestFileSystem_List(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	testFile := filepath.Join(tempDir, "test.txt")
 	err = os.WriteFile(testFile, []byte("test content"), 0644)
@@ -107,7 +107,7 @@ func TestFileSystem_Read(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	testFile := filepath.Join(tempDir, "test.txt")
 	err = os.WriteFile(testFile, []byte("test content"), 0644)
@@ -181,7 +181,7 @@ func TestFileSystem_Write(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	fs := NewFileSystem(mockLogger, FileSystemConfig{
 		AllowedDirectory: tempDir,
@@ -255,7 +255,7 @@ func TestFileSystem_Delete(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	fs := NewFileSystem(mockLogger, FileSystemConfig{
 		AllowedDirectory: tempDir,
@@ -350,7 +350,7 @@ func TestFileSystem_Tree(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a directory structure for testing
 	require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "dir1/subdir"), 0755))
@@ -420,7 +420,7 @@ func TestFileSystem_Mkdir(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	fs := NewFileSystem(mockLogger, FileSystemConfig{
 		AllowedDirectory: tempDir,
@@ -497,7 +497,7 @@ func TestFileSystem_Search(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "fs_test_*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create test file structure
 	testFiles := map[string]string{

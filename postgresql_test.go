@@ -41,7 +41,7 @@ func TestPostgreSQL_Query(t *testing.T) {
 	// Create a sqlMock database connection
 	db, sqlMock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create mock logger and set up expectations
 	logger := new(MockLogger)
