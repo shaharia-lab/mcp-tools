@@ -272,7 +272,7 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 	defer func() { _ = rows.Close() }()
 
 	var schema strings.Builder
-	schema.WriteString(fmt.Sprintf("Table: %s\n\n", tableName))
+	fmt.Fprintf(&schema, "Table: %s\n\n", tableName)
 	schema.WriteString("Column Name | Data Type | Length | Nullable | Default\n")
 	schema.WriteString("------------|-----------|---------|----------|----------\n")
 
@@ -286,12 +286,12 @@ func (p *PostgreSQL) getTableSchema(ctx context.Context, db *sql.DB, tableName s
 			return returnErrorOutput(err), nil
 		}
 
-		schema.WriteString(fmt.Sprintf("%s | %s | %v | %s | %s\n",
+		fmt.Fprintf(&schema, "%s | %s | %v | %s | %s\n",
 			columnName,
 			dataType,
 			maxLength.Int64,
 			isNullable,
-			defaultValue.String))
+			defaultValue.String)
 	}
 
 	p.logger.WithFields(map[string]interface{}{

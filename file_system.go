@@ -268,7 +268,7 @@ func (fs *FileSystem) handleTree(path string) (goai.CallToolResult, error) {
 				connector = "└──"
 			}
 
-			result.WriteString(fmt.Sprintf("%s%s %s\n", prefix, connector, entry.Name()))
+			fmt.Fprintf(&result, "%s%s %s\n", prefix, connector, entry.Name())
 
 			if entry.IsDir() {
 				newPrefix := prefix
