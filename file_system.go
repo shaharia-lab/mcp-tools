@@ -341,7 +341,7 @@ func (fs *FileSystem) handleCreate(path string) (goai.CallToolResult, error) {
 	if err != nil {
 		return goai.CallToolResult{}, fmt.Errorf("failed to create file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return goai.CallToolResult{
 		Content: []goai.ToolResultContent{{

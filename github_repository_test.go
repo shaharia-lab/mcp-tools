@@ -325,7 +325,7 @@ func TestHandleRepositoryOperation_CreateBranch(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		if requestBody.Ref == "" || requestBody.SHA == "" {
 			t.Error("Required fields missing in request")
